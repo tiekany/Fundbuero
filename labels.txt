@@ -1,5 +1,0 @@
-0 Brotdosen
-1 Flaschen
-2 Schuhe
-3 Jacken
-4 Nicht zuordbar
