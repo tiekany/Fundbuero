@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ============================================================
-# KERAS / TENSORFLOW
+# TENSORFLOW / KERAS
 # ============================================================
 
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
@@ -33,7 +33,7 @@ st.set_page_config(
 
 
 # ============================================================
-# PFADE
+# ORDNER
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -81,12 +81,12 @@ st.markdown(
     """
     <style>
 
-    /* --------------------------------------------------------
+    /* ========================================================
        GRUNDLAYOUT
-       -------------------------------------------------------- */
+       ======================================================== */
 
     .stApp {
-        background: white;
+        background: #ffffff;
     }
 
     .main .block-container {
@@ -98,9 +98,9 @@ st.markdown(
     }
 
 
-    /* --------------------------------------------------------
-       STREAMLIT ELEMENTE
-       -------------------------------------------------------- */
+    /* ========================================================
+       STREAMLIT KOPF UND FOOTER AUSBLENDEN
+       ======================================================== */
 
     header {
         visibility: hidden;
@@ -113,9 +113,9 @@ st.markdown(
     }
 
 
-    /* --------------------------------------------------------
+    /* ========================================================
        ÜBERSCHRIFTEN
-       -------------------------------------------------------- */
+       ======================================================== */
 
     h1,
     h2,
@@ -131,13 +131,12 @@ st.markdown(
     }
 
 
-    /* --------------------------------------------------------
+    /* ========================================================
        BUTTONS
-       -------------------------------------------------------- */
+       ======================================================== */
 
     .stButton > button {
         width: 100% !important;
-
         min-height: 52px !important;
 
         border: 3px solid #111111 !important;
@@ -165,15 +164,15 @@ st.markdown(
     }
 
 
-    /* --------------------------------------------------------
+    /* ========================================================
        SUCHFELD
-       -------------------------------------------------------- */
+       ======================================================== */
 
     .stTextInput input {
         border: 3px solid #111111 !important;
         border-radius: 2px !important;
 
-        background: white !important;
+        background: #ffffff !important;
         color: #111111 !important;
 
         font-size: 15px !important;
@@ -186,39 +185,58 @@ st.markdown(
     }
 
 
-    /* --------------------------------------------------------
+    /* ========================================================
        TEXTAREA
-       -------------------------------------------------------- */
+       ======================================================== */
 
     .stTextArea textarea {
         border: 3px solid #111111 !important;
         border-radius: 2px !important;
-
         color: #111111 !important;
     }
 
 
-    /* --------------------------------------------------------
+    /* ========================================================
        BILDER
-       -------------------------------------------------------- */
+       ======================================================== */
 
     [data-testid="stImage"] img {
         border-radius: 0 !important;
     }
 
 
-    /* --------------------------------------------------------
-       FOOTER-ABSTAND
-       -------------------------------------------------------- */
+    /* ========================================================
+       FOOTER
+       ======================================================== */
 
-    .footer-space {
-        height: 5px;
+    .footer-area {
+        margin-top: 8px;
+        margin-bottom: 2px;
+    }
+
+    .footer-red {
+        color: #d00000;
+        font-size: 18px;
+        font-weight: 900;
+        line-height: 0.82;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    .footer-school {
+        color: #111111;
+        font-size: 9px;
+        font-weight: 900;
+        line-height: 1.0;
+        text-align: center;
+        margin-top: 15px;
+        white-space: nowrap;
     }
 
 
-    /* --------------------------------------------------------
+    /* ========================================================
        MOBILE
-       -------------------------------------------------------- */
+       ======================================================== */
 
     @media (max-width: 600px) {
 
@@ -235,6 +253,14 @@ st.markdown(
         .stButton > button {
             min-height: 49px !important;
             font-size: 13px !important;
+        }
+
+        .footer-red {
+            font-size: 16px;
+        }
+
+        .footer-school {
+            font-size: 8px;
         }
     }
 
@@ -279,20 +305,12 @@ def clean_label(label):
 
     label = str(label).strip()
 
-    # Entfernt z.B.
-    #
+    # Entfernt:
     # 0 Flasche
     # 1 Flasche
-    # 2 - Tasche
-    # 3. Rucksack
-    # 4) Kleidung
-    #
-    # Ergebnis:
-    #
-    # Flasche
-    # Tasche
-    # Rucksack
-    # Kleidung
+    # 2. Tasche
+    # 3) Rucksack
+    # 4 - Kleidung
 
     label = re.sub(
         r"^\s*\d+\s*[\.\)\-:\s]+\s*",
@@ -510,7 +528,7 @@ def get_item(item_id):
 
 
 # ============================================================
-# ZUORDNUNG
+# FUNDSTÜCK ZUORDNEN
 # ============================================================
 
 def update_assigned(item_id):
@@ -596,9 +614,7 @@ def save_uploaded_image(uploaded_file):
 def repair_h5_model():
 
     if not MODEL_PATH.exists():
-
         return None
-
 
     if FIXED_MODEL_PATH.exists():
 
@@ -615,7 +631,6 @@ def repair_h5_model():
 
             pass
 
-
     try:
 
         import h5py
@@ -625,21 +640,17 @@ def repair_h5_model():
             FIXED_MODEL_PATH
         )
 
-
         with h5py.File(
             FIXED_MODEL_PATH,
             "r+"
         ) as file:
 
             if "model_config" not in file.attrs:
-
                 return FIXED_MODEL_PATH
-
 
             config = file.attrs[
                 "model_config"
             ]
-
 
             if isinstance(
                 config,
@@ -650,11 +661,9 @@ def repair_h5_model():
                     "utf-8"
                 )
 
-
             config = json.loads(
                 config
             )
-
 
             def clean_config(obj):
 
@@ -676,11 +685,8 @@ def repair_h5_model():
                             None
                         )
 
-
                     for value in obj.values():
-
                         clean_config(value)
-
 
                 elif isinstance(
                     obj,
@@ -688,20 +694,15 @@ def repair_h5_model():
                 ):
 
                     for value in obj:
-
                         clean_config(value)
 
-
             clean_config(config)
-
 
             file.attrs[
                 "model_config"
             ] = json.dumps(config)
 
-
         return FIXED_MODEL_PATH
-
 
     except Exception:
 
@@ -717,7 +718,6 @@ def load_ai_model():
 
     model_file = repair_h5_model()
 
-
     if model_file is None:
 
         st.error(
@@ -725,7 +725,6 @@ def load_ai_model():
         )
 
         return None
-
 
     try:
 
@@ -735,7 +734,6 @@ def load_ai_model():
         )
 
         return model
-
 
     except Exception as error:
 
@@ -755,7 +753,7 @@ def load_ai_model():
 
 
 # ============================================================
-# BILD FÜR KI VORBEREITEN
+# BILD VORBEREITEN
 # ============================================================
 
 def prepare_image(image):
@@ -799,9 +797,7 @@ def run_layers(
 ):
 
     if model_part is None:
-
         return tensor
-
 
     for layer in getattr(
         model_part,
@@ -816,12 +812,10 @@ def run_layers(
 
             continue
 
-
         tensor = layer(
             tensor,
             training=False
         )
-
 
     return tensor
 
@@ -834,18 +828,14 @@ def predict_image(image):
 
     model = load_ai_model()
 
-
     if model is None:
-
         return None
-
 
     try:
 
         tensor = prepare_image(
             image
         )
-
 
         outer_layers = list(
             getattr(
@@ -855,13 +845,11 @@ def predict_image(image):
             )
         )
 
-
         feature_model = None
         classifier_model = None
 
-
         # ----------------------------------------------------
-        # Teachable-Machine-Struktur
+        # TEACHABLE-MACHINE-STRUKTUR
         # ----------------------------------------------------
 
         for layer in outer_layers:
@@ -872,19 +860,14 @@ def predict_image(image):
                 ""
             )
 
-
             if name == "sequential_1":
-
                 feature_model = layer
 
-
             elif name == "sequential_3":
-
                 classifier_model = layer
 
-
         # ----------------------------------------------------
-        # Falls die Namen anders sind
+        # ALTERNATIVE STRUKTUR
         # ----------------------------------------------------
 
         if (
@@ -893,7 +876,6 @@ def predict_image(image):
         ):
 
             nested = []
-
 
             for layer in outer_layers:
 
@@ -908,7 +890,6 @@ def predict_image(image):
                         []
                     )
 
-
                     if len(
                         inner_layers
                     ) >= 2:
@@ -917,15 +898,13 @@ def predict_image(image):
                             layer
                         )
 
-
             if len(nested) >= 2:
 
                 feature_model = nested[0]
                 classifier_model = nested[-1]
 
-
         # ----------------------------------------------------
-        # Feature-Modell
+        # FEATURE-MODELL
         # ----------------------------------------------------
 
         if feature_model is not None:
@@ -935,14 +914,12 @@ def predict_image(image):
                 tensor
             )
 
-
             if classifier_model is not None:
 
                 tensor = run_layers(
                     classifier_model,
                     tensor
                 )
-
 
         else:
 
@@ -951,9 +928,8 @@ def predict_image(image):
                 tensor
             )
 
-
         # ----------------------------------------------------
-        # Wahrscheinlichkeiten
+        # WAHRSCHEINLICHKEITEN
         # ----------------------------------------------------
 
         probabilities = (
@@ -961,11 +937,9 @@ def predict_image(image):
             .reshape(-1)
         )
 
-
         total = float(
             probabilities.sum()
         )
-
 
         if (
             total < 0.99
@@ -981,7 +955,6 @@ def predict_image(image):
                 ).numpy()
             )
 
-
         ranking = sorted(
             enumerate(
                 probabilities
@@ -990,9 +963,7 @@ def predict_image(image):
             reverse=True
         )
 
-
         results = []
-
 
         for index, probability in ranking:
 
@@ -1006,12 +977,10 @@ def predict_image(image):
                     f"Klasse {index + 1}"
                 )
 
-
             # Nummer vor dem Begriff entfernen
             label = clean_label(
                 label
             )
-
 
             results.append(
                 {
@@ -1022,16 +991,13 @@ def predict_image(image):
                 }
             )
 
-
         return results
-
 
     except Exception as error:
 
         st.error(
             "KI-Erkennung fehlgeschlagen."
         )
-
 
         with st.expander(
             "Technische Fehlermeldung"
@@ -1040,7 +1006,6 @@ def predict_image(image):
             st.code(
                 str(error)
             )
-
 
         return None
 
@@ -1057,7 +1022,6 @@ def show_header(
         [1, 5, 1]
     )
 
-
     # --------------------------------------------------------
     # ZURÜCK
     # --------------------------------------------------------
@@ -1073,7 +1037,6 @@ def show_header(
                     width=24
                 )
 
-
             if st.button(
                 "←",
                 key=f"back_{st.session_state.page}",
@@ -1081,7 +1044,6 @@ def show_header(
             ):
 
                 go_to("start")
-
 
     # --------------------------------------------------------
     # FUNDBÜRO LOGO
@@ -1102,7 +1064,6 @@ def show_header(
                 "## FUNDBÜRO"
             )
 
-
     # --------------------------------------------------------
     # PROFIL
     # --------------------------------------------------------
@@ -1122,34 +1083,70 @@ def show_header(
 
 
 # ============================================================
-# NEUER FOOTER
+# FOOTER
 # ============================================================
 
 def show_footer():
 
-    # kleiner Abstand zum letzten Inhalt
     st.write("")
 
     # ========================================================
-    # DAS KOMPLETTE LOGO WIRD ALS EIN BILD ANGEZEIGT
+    # FOOTER
     #
-    # TU ES | KATHARINEUM ZU LÜBECK | STEUERRAD
+    #   TU ES | KATHARINEUM ZU LÜBECK | LOGO
     #
-    # Dadurch bleibt die Anordnung exakt wie in deinem Bild.
+    # Das Logo rechts sollte nur das schwarze Symbol enthalten.
     # ========================================================
 
-    if FOOTER_LOGO_PATH.exists():
+    left, middle, right = st.columns(
+        [1.0, 2.8, 1.25],
+        gap="small"
+    )
 
-        st.image(
-            FOOTER_LOGO_PATH,
-            width=390
+    # --------------------------------------------------------
+    # TU ES
+    # --------------------------------------------------------
+
+    with left:
+
+        st.markdown(
+            """
+            <div class="footer-red">
+                TU<br>
+                ES
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-    else:
+    # --------------------------------------------------------
+    # KATHARINEUM ZU LÜBECK
+    # --------------------------------------------------------
 
-        st.warning(
-            "footer_logo.png wurde nicht gefunden."
+    with middle:
+
+        st.markdown(
+            """
+            <div class="footer-school">
+                KATHARINEUM<br>
+                ZU LÜBECK
+            </div>
+            """,
+            unsafe_allow_html=True
         )
+
+    # --------------------------------------------------------
+    # LOGO
+    # --------------------------------------------------------
+
+    with right:
+
+        if FOOTER_LOGO_PATH.exists():
+
+            st.image(
+                FOOTER_LOGO_PATH,
+                width=55
+            )
 
 
 # ============================================================
@@ -1162,7 +1159,6 @@ def page_start():
 
     st.write("")
 
-
     # ========================================================
     # FOTO HOCHLADEN
     # ========================================================
@@ -1171,7 +1167,6 @@ def page_start():
         [1, 8],
         gap="small"
     )
-
 
     with upload_columns[0]:
 
@@ -1182,7 +1177,6 @@ def page_start():
                 width=25
             )
 
-
     with upload_columns[1]:
 
         upload_clicked = st.button(
@@ -1191,14 +1185,11 @@ def page_start():
             width="stretch"
         )
 
-
     if upload_clicked:
 
         go_to("upload")
 
-
     st.write("")
-
 
     # ========================================================
     # KLEIDUNGSSTÜCK SUCHEN
@@ -1209,7 +1200,6 @@ def page_start():
         gap="small"
     )
 
-
     with search_columns[0]:
 
         if SEARCH_ICON_PATH.exists():
@@ -1219,7 +1209,6 @@ def page_start():
                 width=25
             )
 
-
     with search_columns[1]:
 
         search_clicked = st.button(
@@ -1228,14 +1217,11 @@ def page_start():
             width="stretch"
         )
 
-
     if search_clicked:
 
         go_to("search")
 
-
     st.write("")
-
 
     # ========================================================
     # LETZTE FUNDSTÜCKE
@@ -1245,11 +1231,9 @@ def page_start():
         "LETZTE FUNDSTÜCKE"
     )
 
-
     items = get_all_items()
 
     recent_items = items[:6]
-
 
     if not recent_items:
 
@@ -1257,14 +1241,12 @@ def page_start():
             "Noch keine Fundstücke vorhanden."
         )
 
-
     else:
 
         columns = st.columns(
             3,
             gap="small"
         )
-
 
         for index, item in enumerate(
             recent_items
@@ -1278,7 +1260,6 @@ def page_start():
                     item["image_path"]
                 )
 
-
                 if image:
 
                     st.image(
@@ -1286,18 +1267,15 @@ def page_start():
                         width="stretch"
                     )
 
-
                 label = (
                     item["name"]
                     or item["kategorie"]
                     or "Fundstück"
                 )
 
-
                 label = clean_label(
                     label
                 )
-
 
                 if st.button(
                     label,
@@ -1311,12 +1289,11 @@ def page_start():
 
                     go_to("detail")
 
-
     show_footer()
 
 
 # ============================================================
-# UPLOADSEITE
+# UPLOAD-SEITE
 # ============================================================
 
 def page_upload():
@@ -1325,11 +1302,9 @@ def page_upload():
         show_back=True
     )
 
-
     st.subheader(
         "FUNDSTÜCK AUFNEHMEN"
     )
-
 
     # ========================================================
     # KAMERA
@@ -1339,9 +1314,8 @@ def page_upload():
         "Foto aufnehmen"
     )
 
-
     # ========================================================
-    # DATEI HOCHLADEN
+    # DATEI
     # ========================================================
 
     uploaded_file = st.file_uploader(
@@ -1354,7 +1328,6 @@ def page_upload():
         ]
     )
 
-
     if camera_image is not None:
 
         selected_image = camera_image
@@ -1363,19 +1336,16 @@ def page_upload():
 
         selected_image = uploaded_file
 
-
     if selected_image is not None:
 
         image = Image.open(
             selected_image
         ).convert("RGB")
 
-
         st.image(
             image,
             width="stretch"
         )
-
 
         # ====================================================
         # KI
@@ -1385,7 +1355,6 @@ def page_upload():
             "KI-ERKENNUNG"
         )
 
-
         with st.spinner(
             "Fundstück wird erkannt..."
         ):
@@ -1394,9 +1363,7 @@ def page_upload():
                 image
             )
 
-
         detected_name = ""
-
 
         if results:
 
@@ -1404,22 +1371,18 @@ def page_upload():
                 results[0]["label"]
             )
 
-
             confidence = (
                 results[0]["confidence"]
                 * 100
             )
 
-
             st.write(
                 f"**Erkannt:** {detected_name}"
             )
 
-
             st.write(
                 f"**Sicherheit:** {confidence:.1f} %"
             )
-
 
             with st.expander(
                 "Weitere Ergebnisse"
@@ -1431,18 +1394,15 @@ def page_upload():
                         result["label"]
                     )
 
-
                     result_confidence = (
                         result["confidence"]
                         * 100
                     )
 
-
                     st.write(
                         f"{result_name}: "
                         f"{result_confidence:.1f} %"
                     )
-
 
         # ====================================================
         # INFORMATIONEN
@@ -1452,12 +1412,10 @@ def page_upload():
             "INFORMATIONEN"
         )
 
-
         name = st.text_input(
             "Bezeichnung",
             value=detected_name
         )
-
 
         category = st.selectbox(
             "Kategorie",
@@ -1472,38 +1430,31 @@ def page_upload():
             ]
         )
 
-
         color = st.text_input(
             "Farbe",
             placeholder="z. B. schwarz"
         )
 
-
         found_date = st.date_input(
             "Gefunden am"
         )
-
 
         location = st.text_input(
             "Fundort",
             placeholder="z. B. Obere Turnhalle"
         )
 
-
         notes = st.text_area(
             "Notizen",
             placeholder="Weitere Informationen..."
         )
-
 
         current_location = st.text_input(
             "Aktueller Standort",
             value="Fundkiste"
         )
 
-
         st.write("")
-
 
         if st.button(
             "FUNDSTÜCK SPEICHERN",
@@ -1514,7 +1465,6 @@ def page_upload():
             image_path = save_uploaded_image(
                 selected_image
             )
-
 
             if image_path:
 
@@ -1529,14 +1479,11 @@ def page_upload():
                     aktueller_standort=current_location
                 )
 
-
                 st.session_state.selected_item = (
                     item_id
                 )
 
-
                 go_to("detail")
-
 
     show_footer()
 
@@ -1549,7 +1496,6 @@ def page_search():
 
     show_header()
 
-
     # ========================================================
     # SUCHFELD
     # ========================================================
@@ -1560,11 +1506,9 @@ def page_search():
         placeholder="(z.B.:) Flaschen"
     )
 
-
     st.session_state.search_term = (
         search_term
     )
-
 
     # ========================================================
     # ÜBERSCHRIFT
@@ -1582,7 +1526,6 @@ def page_search():
             "ERGEBNISSE"
         )
 
-
     # ========================================================
     # ZURÜCK
     # ========================================================
@@ -1595,7 +1538,6 @@ def page_search():
 
         go_to("start")
 
-
     # ========================================================
     # FILTER
     # ========================================================
@@ -1607,7 +1549,6 @@ def page_search():
         color_filter = st.text_input(
             "Farbe"
         )
-
 
         category_filter = st.selectbox(
             "Kategorie",
@@ -1622,7 +1563,6 @@ def page_search():
             ]
         )
 
-
     # ========================================================
     # FUNDSTÜCKE FILTERN
     # ========================================================
@@ -1631,20 +1571,17 @@ def page_search():
 
     filtered_items = []
 
-
     search_lower = (
         search_term
         .strip()
         .lower()
     )
 
-
     color_lower = (
         color_filter
         .strip()
         .lower()
     )
-
 
     for item in items:
 
@@ -1658,13 +1595,10 @@ def page_search():
             ]
         ).lower()
 
-
         if search_lower:
 
             if search_lower not in searchable:
-
                 continue
-
 
         if color_lower:
 
@@ -1672,11 +1606,8 @@ def page_search():
                 item["farbe"] or ""
             ).lower()
 
-
             if color_lower not in item_color:
-
                 continue
-
 
         if category_filter:
 
@@ -1687,11 +1618,9 @@ def page_search():
 
                 continue
 
-
         filtered_items.append(
             item
         )
-
 
     # ========================================================
     # ERGEBNISSE
@@ -1703,14 +1632,12 @@ def page_search():
             "Keine passenden Fundstücke gefunden."
         )
 
-
     else:
 
         columns = st.columns(
             3,
             gap="small"
         )
-
 
         for index, item in enumerate(
             filtered_items
@@ -1724,7 +1651,6 @@ def page_search():
                     item["image_path"]
                 )
 
-
                 if image:
 
                     st.image(
@@ -1732,18 +1658,15 @@ def page_search():
                         width="stretch"
                     )
 
-
                 label = (
                     item["name"]
                     or item["kategorie"]
                     or "Fundstück"
                 )
 
-
                 label = clean_label(
                     label
                 )
-
 
                 if st.button(
                     label,
@@ -1755,9 +1678,7 @@ def page_search():
                         item["id"]
                     )
 
-
                     go_to("detail")
-
 
     show_footer()
 
@@ -1770,21 +1691,17 @@ def page_detail():
 
     show_header()
 
-
     item_id = (
         st.session_state.selected_item
     )
-
 
     if item_id is None:
 
         go_to("search")
 
-
     item = get_item(
         item_id
     )
-
 
     if item is None:
 
@@ -1793,7 +1710,6 @@ def page_detail():
         )
 
         return
-
 
     # ========================================================
     # SUCHFELD
@@ -1805,7 +1721,6 @@ def page_detail():
         placeholder="(z.B.:) Flaschen",
         key="detail_search"
     )
-
 
     # ========================================================
     # ÜBERSCHRIFT
@@ -1823,7 +1738,6 @@ def page_detail():
             "FUNDSTÜCK"
         )
 
-
     # ========================================================
     # ZURÜCK
     # ========================================================
@@ -1836,7 +1750,6 @@ def page_detail():
 
         go_to("search")
 
-
     # ========================================================
     # BILD
     # ========================================================
@@ -1845,13 +1758,11 @@ def page_detail():
         item["image_path"]
     )
 
-
     if image:
 
         image_columns = st.columns(
             [1, 2, 1]
         )
-
 
         with image_columns[1]:
 
@@ -1859,7 +1770,6 @@ def page_detail():
                 image,
                 width="stretch"
             )
-
 
     # ========================================================
     # NAME
@@ -1871,16 +1781,13 @@ def page_detail():
         or "Fundstück"
     )
 
-
     title = clean_label(
         title
     )
 
-
     st.subheader(
         title.upper()
     )
-
 
     # ========================================================
     # INFORMATIONEN
@@ -1896,7 +1803,6 @@ def page_detail():
 
     st.divider()
 
-
     st.markdown(
         "**FUNDORT:**"
     )
@@ -1906,7 +1812,6 @@ def page_detail():
     )
 
     st.divider()
-
 
     st.markdown(
         "**NOTIZEN:**"
@@ -1918,7 +1823,6 @@ def page_detail():
 
     st.divider()
 
-
     st.markdown(
         "**AKTUELLER STANDORT:**"
     )
@@ -1926,7 +1830,6 @@ def page_detail():
     st.write(
         item["aktueller_standort"] or "-"
     )
-
 
     if item["farbe"]:
 
@@ -1940,9 +1843,7 @@ def page_detail():
             item["farbe"]
         )
 
-
     st.write("")
-
 
     # ========================================================
     # ZUORDNUNG
@@ -1953,7 +1854,6 @@ def page_detail():
         st.success(
             "FUNDSTÜCK ZUGEORDNET"
         )
-
 
     else:
 
@@ -1969,33 +1869,28 @@ def page_detail():
 
             st.rerun()
 
-
     show_footer()
 
 
 # ============================================================
-# APP STARTEN
+# APP ROUTER
 # ============================================================
 
 if st.session_state.page == "start":
 
     page_start()
 
-
 elif st.session_state.page == "upload":
 
     page_upload()
-
 
 elif st.session_state.page == "search":
 
     page_search()
 
-
 elif st.session_state.page == "detail":
 
     page_detail()
-
 
 else:
 
