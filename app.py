@@ -4,7 +4,7 @@
 
 import os
 
-# Wichtig: VOR TensorFlow
+# MUSS VOR DEM TENSORFLOW-IMPORT STEHEN
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -16,7 +16,6 @@ from datetime import datetime
 
 import streamlit as st
 import tensorflow as tf
-
 from PIL import Image
 
 
@@ -69,10 +68,6 @@ st.markdown(
     """
     <style>
 
-    /* =========================
-       GRUNDLAYOUT
-       ========================= */
-
     .stApp {
         background: #f3f3f3;
     }
@@ -92,11 +87,6 @@ st.markdown(
     footer {
         visibility: hidden;
     }
-
-
-    /* =========================
-       SCHRIFT
-       ========================= */
 
     h1, h2, h3 {
         color: #111111 !important;
@@ -121,11 +111,6 @@ st.markdown(
         font-family: Arial, Helvetica, sans-serif !important;
     }
 
-
-    /* =========================
-       BUTTONS
-       ========================= */
-
     .stButton > button {
         width: 100%;
         min-height: 48px;
@@ -149,11 +134,6 @@ st.markdown(
         border-color: #111111 !important;
     }
 
-
-    /* =========================
-       SUCHFELD
-       ========================= */
-
     .stTextInput input {
         background: #ffffff !important;
         color: #111111 !important;
@@ -168,11 +148,6 @@ st.markdown(
         display: none;
     }
 
-
-    /* =========================
-       TEXTAREA
-       ========================= */
-
     .stTextArea textarea {
         background: #ffffff !important;
         color: #111111 !important;
@@ -181,20 +156,10 @@ st.markdown(
         border-radius: 14px !important;
     }
 
-
-    /* =========================
-       SELECTBOX
-       ========================= */
-
     .stSelectbox > div > div {
         background: #ffffff !important;
         border-radius: 14px !important;
     }
-
-
-    /* =========================
-       INFO BOX
-       ========================= */
 
     .info-box {
         background: #ffffff;
@@ -209,30 +174,18 @@ st.markdown(
         font-family: Arial, Helvetica, sans-serif;
     }
 
-
-    /* =========================
-       DETAIL
-       ========================= */
-
     .detail-label {
         font-size: 12px;
         font-weight: 800;
         color: #111111;
-
         margin-top: 8px;
     }
 
     .detail-value {
         font-size: 14px;
         color: #333333;
-
         margin-bottom: 10px;
     }
-
-
-    /* =========================
-       ZUGEORDNET
-       ========================= */
 
     .assigned {
         background: #ffffff;
@@ -250,28 +203,13 @@ st.markdown(
         margin-top: 15px;
     }
 
-
-    /* =========================
-       ABSTAND
-       ========================= */
-
     .bottom-space {
         height: 45px;
     }
 
-
-    /* =========================
-       BILDER
-       ========================= */
-
     [data-testid="stImage"] img {
         border-radius: 10px;
     }
-
-
-    /* =========================
-       MOBILE
-       ========================= */
 
     @media (max-width: 600px) {
 
@@ -311,6 +249,12 @@ if "search" not in st.session_state:
 if "ai_result" not in st.session_state:
     st.session_state.ai_result = ""
 
+if "ai_confidence" not in st.session_state:
+    st.session_state.ai_confidence = 0.0
+
+if "last_image_id" not in st.session_state:
+    st.session_state.last_image_id = None
+
 
 # ============================================================
 # NAVIGATION
@@ -334,12 +278,6 @@ def clean_label(text):
 
     text = str(text).strip()
 
-    # Entfernt z.B.
-    # 0 Flasche
-    # 1. Flasche
-    # 2) Tasche
-    # 3 - Rucksack
-
     text = re.sub(
         r"^\s*\d+\s*[\.\)\-:\s]+\s*",
         "",
@@ -350,7 +288,7 @@ def clean_label(text):
 
 
 # ============================================================
-# LABELS LADEN
+# LABELS
 # ============================================================
 
 def load_labels():
@@ -534,7 +472,7 @@ def get_items():
 
 
 # ============================================================
-# EIN FUNDSTÜCK LADEN
+# EIN FUNDSTÜCK
 # ============================================================
 
 def get_item(item_id):
@@ -556,7 +494,7 @@ def get_item(item_id):
 
 
 # ============================================================
-# FUNDSTÜCK ZUORDNEN
+# ZUORDNEN
 # ============================================================
 
 def assign_item(item_id):
@@ -630,10 +568,7 @@ def load_fast_model():
             compile=False
         )
 
-        # ----------------------------------------------------
-        # MODELL AUFWÄRMEN
-        # ----------------------------------------------------
-
+        # Modell einmal aufwärmen
         dummy = tf.zeros(
             (1, 224, 224, 3),
             dtype=tf.float32
@@ -683,34 +618,29 @@ def get_predict_function():
 
 
 # ============================================================
-# BILD FÜR KI VORBEREITEN
+# BILD VORBEREITEN
 # ============================================================
 
 def prepare_image_fast(image):
 
-    # RGB
     image = image.convert(
         "RGB"
     )
 
-    # Exakt Modellgröße
     image = image.resize(
         (224, 224),
         Image.Resampling.BILINEAR
     )
 
-    # Tensor
     image = tf.convert_to_tensor(
         image,
         dtype=tf.float32
     )
 
-    # Teachable Machine Normalisierung
     image = (
         image / 127.5
     ) - 1.0
 
-    # Batch
     image = tf.expand_dims(
         image,
         axis=0
@@ -720,7 +650,7 @@ def prepare_image_fast(image):
 
 
 # ============================================================
-# KI ERKENNUNG
+# KI
 # ============================================================
 
 def predict_fast(image):
@@ -730,36 +660,30 @@ def predict_fast(image):
     )
 
     if predict_function is None:
-
         return None
 
     try:
 
-        # Bild vorbereiten
         input_tensor = (
             prepare_image_fast(image)
         )
 
-        # KI
         result = predict_function(
             input_tensor
         )
 
         probabilities = result[0]
 
-        # Beste Klasse
         index = int(
             tf.argmax(
                 probabilities
             ).numpy()
         )
 
-        # Sicherheit
         confidence = float(
             probabilities[index].numpy()
         )
 
-        # Name
         if index < len(LABELS):
 
             label = LABELS[index]
@@ -777,10 +701,7 @@ def predict_fast(image):
 
     except Exception as error:
 
-        print(
-            "KI-Fehler:"
-        )
-
+        print("KI-Fehler:")
         print(error)
 
         return None
@@ -796,10 +717,6 @@ def show_header():
         [1, 4, 1]
     )
 
-    # --------------------------------------------------------
-    # ZURÜCK
-    # --------------------------------------------------------
-
     with left:
 
         if st.session_state.page != "start":
@@ -812,10 +729,6 @@ def show_header():
 
                 go("start")
 
-    # --------------------------------------------------------
-    # LOGO
-    # --------------------------------------------------------
-
     with center:
 
         if LOGO_PATH.exists():
@@ -824,10 +737,6 @@ def show_header():
                 str(LOGO_PATH),
                 width=58
             )
-
-    # --------------------------------------------------------
-    # PROFIL
-    # --------------------------------------------------------
 
     with right:
 
@@ -857,10 +766,6 @@ def show_footer():
     )
 
     st.divider()
-
-    # --------------------------------------------------------
-    # NAVIGATION
-    # --------------------------------------------------------
 
     nav1, nav2, nav3 = st.columns(
         3,
@@ -898,10 +803,6 @@ def show_footer():
             go("profile")
 
     st.write("")
-
-    # --------------------------------------------------------
-    # TU ES / KATHARINEUM / LOGO
-    # --------------------------------------------------------
 
     left, middle, right = st.columns(
         [1, 2.7, 1],
@@ -965,23 +866,19 @@ def start_page():
 
     st.write("")
 
-    # --------------------------------------------------------
-    # FOTO HOCHLADEN
-    # --------------------------------------------------------
-
     if st.button(
         "↑   FOTO HOCHLADEN",
         key="start_upload",
         width="stretch"
     ):
 
+        # altes KI-Ergebnis löschen
+        st.session_state.ai_result = ""
+        st.session_state.ai_confidence = 0.0
+
         go("upload")
 
     st.write("")
-
-    # --------------------------------------------------------
-    # SUCHEN
-    # --------------------------------------------------------
 
     if st.button(
         "⌕   FUNDSTÜCK SUCHEN",
@@ -990,10 +887,6 @@ def start_page():
     ):
 
         go("search")
-
-    # --------------------------------------------------------
-    # LETZTE FUNDSTÜCKE
-    # --------------------------------------------------------
 
     st.markdown(
         "### LETZTE FUNDSTÜCKE"
@@ -1059,7 +952,7 @@ def start_page():
 
 
 # ============================================================
-# UPLOAD-SEITE
+# UPLOAD / KI
 # ============================================================
 
 def upload_page():
@@ -1070,17 +963,13 @@ def upload_page():
         "### FUNDSTÜCK AUFNEHMEN"
     )
 
-    # --------------------------------------------------------
-    # KAMERA
-    # --------------------------------------------------------
+    # ========================================================
+    # FOTO
+    # ========================================================
 
     camera = st.camera_input(
         "Foto aufnehmen"
     )
-
-    # --------------------------------------------------------
-    # UPLOAD
-    # --------------------------------------------------------
 
     uploaded = st.file_uploader(
         "Foto auswählen",
@@ -1094,7 +983,15 @@ def upload_page():
 
     file = camera if camera else uploaded
 
+    # ========================================================
+    # WENN EIN FOTO VORHANDEN IST
+    # ========================================================
+
     if file:
+
+        # ----------------------------------------------------
+        # BILD EINMAL EINLESEN
+        # ----------------------------------------------------
 
         image = Image.open(
             file
@@ -1105,26 +1002,34 @@ def upload_page():
             width="stretch"
         )
 
-        # ====================================================
-        # KI
-        # ====================================================
+        # ----------------------------------------------------
+        # EINDEUTIGE ID DES BILDES
+        # ----------------------------------------------------
 
-        st.markdown(
-            "### KI-ERKENNUNG"
+        image_id = (
+            f"{getattr(file, 'name', '')}_"
+            f"{getattr(file, 'size', '')}"
         )
 
-        detected = st.session_state.ai_result
-
         # ----------------------------------------------------
-        # KI BUTTON
+        # AUTOMATISCHE KI
         # ----------------------------------------------------
 
-        if st.button(
-            "KI-ERKENNUNG STARTEN",
-            key="start_ai",
-            width="stretch"
+        if (
+            st.session_state.last_image_id
+            != image_id
         ):
 
+            # Neues Bild
+            st.session_state.last_image_id = (
+                image_id
+            )
+
+            st.session_state.ai_result = ""
+
+            st.session_state.ai_confidence = 0.0
+
+            # KI DIREKT AUSFÜHREN
             with st.spinner(
                 "Fundstück wird erkannt..."
             ):
@@ -1135,51 +1040,41 @@ def upload_page():
 
             if result:
 
-                detected = result["label"]
-
-                confidence = (
-                    result["confidence"]
-                    * 100
-                )
-
-                # Ergebnis speichern
                 st.session_state.ai_result = (
-                    detected
+                    result["label"]
                 )
 
-                st.markdown(
-                    f"""
-                    <div class="info-box">
-
-                    <b>Erkannt:</b>
-                    {detected}
-
-                    <br>
-
-                    <b>Sicherheit:</b>
-                    {confidence:.1f} %
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-            else:
-
-                st.error(
-                    "Die KI konnte das Fundstück nicht erkennen."
+                st.session_state.ai_confidence = (
+                    result["confidence"]
                 )
 
         # ----------------------------------------------------
-        # BEREITS ERKANNT
+        # KI-ERGEBNIS
         # ----------------------------------------------------
 
-        elif detected:
+        detected = (
+            st.session_state.ai_result
+        )
+
+        confidence = (
+            st.session_state.ai_confidence
+            * 100
+        )
+
+        if detected:
 
             st.markdown(
                 f"""
                 <div class="info-box">
-                <b>Erkannt:</b> {detected}
+
+                <b>Erkannt:</b>
+                {detected}
+
+                <br>
+
+                <b>Sicherheit:</b>
+                {confidence:.1f} %
+
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -1196,7 +1091,7 @@ def upload_page():
         name = st.text_input(
             "Bezeichnung",
             value=detected,
-            key="item_name"
+            key=f"item_name_{image_id}"
         )
 
         category = st.selectbox(
@@ -1211,36 +1106,36 @@ def upload_page():
                 "Elektronik",
                 "Sonstiges"
             ],
-            key="item_category"
+            key=f"item_category_{image_id}"
         )
 
         color = st.text_input(
             "Farbe",
             placeholder="z. B. schwarz",
-            key="item_color"
+            key=f"item_color_{image_id}"
         )
 
         found_date = st.date_input(
             "Gefunden am",
-            key="item_date"
+            key=f"item_date_{image_id}"
         )
 
         location = st.text_input(
             "Fundort",
             placeholder="z. B. Obere Turnhalle",
-            key="item_location"
+            key=f"item_location_{image_id}"
         )
 
         notes = st.text_area(
             "Notizen",
             placeholder="Weitere Informationen...",
-            key="item_notes"
+            key=f"item_notes_{image_id}"
         )
 
         current_location = st.text_input(
             "Aktueller Standort",
             value="Fundkiste",
-            key="item_current_location"
+            key=f"item_current_{image_id}"
         )
 
         # ====================================================
@@ -1249,7 +1144,7 @@ def upload_page():
 
         if st.button(
             "FUNDSTÜCK SPEICHERN",
-            key="save_item",
+            key=f"save_{image_id}",
             width="stretch"
         ):
 
@@ -1275,6 +1170,8 @@ def upload_page():
                 )
 
                 st.session_state.ai_result = ""
+                st.session_state.ai_confidence = 0.0
+                st.session_state.last_image_id = None
 
                 go("detail")
 
@@ -1282,16 +1179,12 @@ def upload_page():
 
 
 # ============================================================
-# SUCHSEITE
+# SUCHE
 # ============================================================
 
 def search_page():
 
     show_header()
-
-    # --------------------------------------------------------
-    # SUCHFELD
-    # --------------------------------------------------------
 
     search = st.text_input(
         "Suche",
@@ -1315,10 +1208,6 @@ def search_page():
         )
 
     items = get_items()
-
-    # --------------------------------------------------------
-    # FILTER
-    # --------------------------------------------------------
 
     if search:
 
@@ -1348,10 +1237,6 @@ def search_page():
     else:
 
         filtered = items
-
-    # --------------------------------------------------------
-    # ERGEBNISSE
-    # --------------------------------------------------------
 
     if not filtered:
 
@@ -1411,7 +1296,7 @@ def search_page():
 
 
 # ============================================================
-# DETAILSEITE
+# DETAIL
 # ============================================================
 
 def detail_page():
@@ -1571,7 +1456,7 @@ def profile_page():
 
         FUNDBÜRO
 
-        <br>
+        <br><br>
 
         Digitale Verwaltung von Fundstücken
 
@@ -1594,7 +1479,7 @@ def profile_page():
 
 
 # ============================================================
-# SEITENSTEUERUNG
+# APP STARTEN
 # ============================================================
 
 if st.session_state.page == "start":
