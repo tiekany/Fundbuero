@@ -4,11 +4,13 @@ import json
 import shutil
 import sqlite3
 import uuid
-from datetime import datetime
+import hashlib
+import time
+from datetime import date, datetime
 from pathlib import Path
 
 # ============================================================
-# TENSORFLOW / KERAS
+# TENSORFLOW
 # ============================================================
 
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
@@ -16,17 +18,16 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import streamlit as st
 import tensorflow as tf
-
 from PIL import Image
 
 
 # ============================================================
-# SEITENEINSTELLUNGEN
+# SEITE
 # ============================================================
 
 st.set_page_config(
     page_title="FUNDBÜRO",
-    page_icon="assets/app_icon.png",
+    page_icon="🔎",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
@@ -43,10 +44,13 @@ MODEL_DIR = BASE_DIR / "modell"
 IMAGE_DIR = BASE_DIR / "bilder"
 DATA_DIR = BASE_DIR / "daten"
 
-ASSETS_DIR.mkdir(exist_ok=True)
-MODEL_DIR.mkdir(exist_ok=True)
-IMAGE_DIR.mkdir(exist_ok=True)
-DATA_DIR.mkdir(exist_ok=True)
+for folder in [
+    ASSETS_DIR,
+    MODEL_DIR,
+    IMAGE_DIR,
+    DATA_DIR,
+]:
+    folder.mkdir(exist_ok=True)
 
 
 # ============================================================
@@ -59,16 +63,8 @@ LABELS_PATH = MODEL_DIR / "labels.txt"
 DATABASE_PATH = DATA_DIR / "fundbuero.db"
 FIXED_MODEL_PATH = DATA_DIR / "keras_model_fixed.h5"
 
-# Logos
-LOGO_PATH = ASSETS_DIR / "fundbuero_logo.png"
-FOOTER_LOGO_PATH = ASSETS_DIR / "footer_logo.png"
-APP_ICON_PATH = ASSETS_DIR / "app_icon.png"
-
-# Icons
-PROFILE_ICON_PATH = ASSETS_DIR / "profile.png"
-UPLOAD_ICON_PATH = ASSETS_DIR / "upload.png"
-SEARCH_ICON_PATH = ASSETS_DIR / "search.png"
-BACK_ICON_PATH = ASSETS_DIR / "back.png"
+LOGO_PATH = ASSETS_DIR / "katharineum_logo.png"
+PROFILE_PATH = ASSETS_DIR / "profile.png"
 
 IMAGE_SIZE = (224, 224)
 
@@ -81,186 +77,327 @@ st.markdown(
     """
     <style>
 
-    /* ========================================================
-       GRUNDLAYOUT
-       ======================================================== */
-
     .stApp {
-        background: #ffffff;
+        background: #f3f3f3 !important;
+    }
+
+    [data-testid="stHeader"],
+    footer {
+        display: none;
     }
 
     .main .block-container {
-        max-width: 450px;
-        padding-top: 8px;
-        padding-left: 10px;
-        padding-right: 10px;
-        padding-bottom: 5px;
+        max-width: 470px;
+        padding-top: 18px;
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-bottom: 105px;
     }
 
-
-    /* ========================================================
-       STREAMLIT KOPF UND FOOTER AUSBLENDEN
-       ======================================================== */
-
-    header {
-        visibility: hidden;
-        height: 0;
+    * {
+        font-family: Arial, Helvetica, sans-serif !important;
     }
 
-    footer {
-        visibility: hidden;
-        height: 0;
-    }
-
-
-    /* ========================================================
-       ÜBERSCHRIFTEN
-       ======================================================== */
-
-    h1,
-    h2,
-    h3 {
+    h1, h2, h3, p, label {
         color: #111111 !important;
+    }
+
+    h2 {
+        font-size: 21px !important;
         font-weight: 900 !important;
     }
 
     h3 {
-        font-size: 19px !important;
-        margin-top: 8px !important;
-        margin-bottom: 9px !important;
+        font-size: 17px !important;
+        font-weight: 900 !important;
     }
 
+    /* --------------------------------------------------------
+       HEADER
+       -------------------------------------------------------- */
 
-    /* ========================================================
+    .app-header {
+        display: grid;
+        grid-template-columns: 48px 1fr 48px;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+
+    .app-title {
+        text-align: center;
+        font-size: 27px;
+        font-weight: 900;
+    }
+
+    .profile-box {
+        width: 34px;
+        height: 34px;
+        border: 3px solid #111111;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        background: white;
+        overflow: hidden;
+    }
+
+    .profile-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* --------------------------------------------------------
+       HAUPTAKTIONEN
+       -------------------------------------------------------- */
+
+    .main-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 82px;
+        border: 3px solid #111111;
+        border-radius: 14px;
+        background: white;
+        color: #111111;
+        font-size: 17px;
+        font-weight: 900;
+        text-align: center;
+        margin-bottom: 13px;
+    }
+
+    .action-icon {
+        font-size: 25px;
+        margin-right: 11px;
+    }
+
+    /* --------------------------------------------------------
        BUTTONS
-       ======================================================== */
+       -------------------------------------------------------- */
 
     .stButton > button {
         width: 100% !important;
-        min-height: 52px !important;
-
+        min-height: 48px !important;
         border: 3px solid #111111 !important;
-        border-radius: 2px !important;
-
-        background: #ffffff !important;
+        border-radius: 12px !important;
+        background: white !important;
         color: #111111 !important;
-
-        font-size: 14px !important;
         font-weight: 900 !important;
-
         box-shadow: none !important;
     }
 
     .stButton > button:hover {
-        background: #f3f3f3 !important;
+        background: #eeeeee !important;
         color: #111111 !important;
         border-color: #111111 !important;
     }
 
-    .stButton > button:focus {
-        color: #111111 !important;
-        border-color: #111111 !important;
-        box-shadow: none !important;
-    }
-
-
-    /* ========================================================
+    /* --------------------------------------------------------
        SUCHFELD
-       ======================================================== */
+       -------------------------------------------------------- */
 
     .stTextInput input {
         border: 3px solid #111111 !important;
-        border-radius: 2px !important;
-
-        background: #ffffff !important;
+        border-radius: 13px !important;
+        background: white !important;
         color: #111111 !important;
-
         font-size: 15px !important;
         font-weight: 700 !important;
+        min-height: 47px !important;
     }
 
-    .stTextInput label {
-        color: #111111 !important;
-        font-weight: 800 !important;
-    }
-
-
-    /* ========================================================
+    /* --------------------------------------------------------
        TEXTAREA
-       ======================================================== */
+       -------------------------------------------------------- */
 
     .stTextArea textarea {
         border: 3px solid #111111 !important;
-        border-radius: 2px !important;
+        border-radius: 12px !important;
+        background: white !important;
         color: #111111 !important;
     }
 
+    /* --------------------------------------------------------
+       SELECTBOX
+       -------------------------------------------------------- */
 
-    /* ========================================================
-       BILDER
-       ======================================================== */
+    .stSelectbox div[data-baseweb="select"] > div {
+        border: 3px solid #111111 !important;
+        border-radius: 12px !important;
+        background: white !important;
+    }
+
+    /* --------------------------------------------------------
+       BILDER-UPLOAD
+       -------------------------------------------------------- */
+
+    [data-testid="stFileUploader"] {
+        background: white !important;
+        border: 3px solid #111111 !important;
+        border-radius: 14px !important;
+        padding: 8px !important;
+    }
+
+    [data-testid="stFileUploaderDropzone"] {
+        background: white !important;
+        border: 0 !important;
+    }
 
     [data-testid="stImage"] img {
-        border-radius: 0 !important;
+        border-radius: 8px !important;
     }
 
+    /* --------------------------------------------------------
+       KI
+       -------------------------------------------------------- */
 
-    /* ========================================================
-       FOOTER
-       ======================================================== */
-
-    .footer-area {
-        margin-top: 8px;
-        margin-bottom: 2px;
-    }
-
-    .footer-red {
-        color: #d00000;
-        font-size: 18px;
-        font-weight: 900;
-        line-height: 0.82;
+    .ai-result {
+        border: 3px solid #111111;
+        border-radius: 13px;
+        background: white;
+        padding: 14px;
+        margin: 12px 0 16px;
         text-align: center;
-        margin-top: 8px;
+    }
+
+    .ai-title {
+        font-size: 14px;
+        font-weight: 900;
+    }
+
+    .ai-name {
+        font-size: 20px;
+        font-weight: 900;
+        margin-top: 4px;
+    }
+
+    .ai-confidence {
+        font-size: 14px;
+        margin-top: 3px;
+    }
+
+    /* --------------------------------------------------------
+       DETAIL
+       -------------------------------------------------------- */
+
+    .detail-row {
+        background: white;
+        border: 3px solid #111111;
+        border-radius: 11px;
+        padding: 11px 13px;
+        margin-bottom: 9px;
+    }
+
+    .detail-label {
+        font-size: 11px;
+        font-weight: 900;
+        margin-bottom: 3px;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+    .assigned {
+        border: 3px solid #111111;
+        border-radius: 12px;
+        background: white;
+        padding: 13px;
+        text-align: center;
+        font-weight: 900;
+        margin-top: 13px;
+    }
+
+    /* --------------------------------------------------------
+       FOOTER
+       -------------------------------------------------------- */
+
+    .school-footer {
+        margin-top: 30px;
+        border-top: 3px solid #111111;
+        padding-top: 18px;
+        text-align: center;
+    }
+
+    .footer-tu-es {
+        font-size: 20px;
+        font-weight: 900;
+        margin-bottom: 8px;
     }
 
     .footer-school {
-        color: #111111;
-        font-size: 9px;
+        font-size: 11px;
         font-weight: 900;
-        line-height: 1.0;
-        text-align: center;
-        margin-top: 15px;
-        white-space: nowrap;
+        line-height: 1.05;
+        margin-bottom: 10px;
     }
 
+    .footer-logo {
+        width: 65px;
+        max-height: 65px;
+        object-fit: contain;
+    }
 
-    /* ========================================================
-       MOBILE
-       ======================================================== */
+    /* --------------------------------------------------------
+       NAVIGATION UNTEN
+       -------------------------------------------------------- */
+
+    .bottom-nav {
+        position: fixed;
+        z-index: 999999;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 8px;
+        width: min(446px, calc(100% - 20px));
+        background: white;
+        border: 3px solid #111111;
+        border-radius: 16px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 4px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    }
+
+    .bottom-nav a {
+        color: #111111 !important;
+        text-decoration: none !important;
+        text-align: center;
+        padding: 8px 2px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+    .bottom-nav a:hover {
+        background: #eeeeee;
+    }
+
+    .bottom-icon {
+        display: block;
+        font-size: 18px;
+        line-height: 18px;
+    }
 
     @media (max-width: 600px) {
 
         .main .block-container {
             max-width: 100%;
-
-            padding-left: 7px;
-            padding-right: 7px;
-
-            padding-top: 5px;
-            padding-bottom: 5px;
+            padding-left: 9px;
+            padding-right: 9px;
+            padding-top: 12px;
         }
 
-        .stButton > button {
-            min-height: 49px !important;
-            font-size: 13px !important;
+        .app-title {
+            font-size: 24px;
         }
 
-        .footer-red {
-            font-size: 16px;
-        }
-
-        .footer-school {
-            font-size: 8px;
+        .main-action {
+            min-height: 76px;
+            font-size: 15px;
         }
     }
 
@@ -274,28 +411,53 @@ st.markdown(
 # SESSION STATE
 # ============================================================
 
-if "page" not in st.session_state:
-    st.session_state.page = "start"
+defaults = {
+    "page": "start",
+    "selected_item": None,
+    "search_term": "",
+    "upload_image_id": None,
+    "ai_result": "",
+    "ai_confidence": 0.0,
+    "ai_results": [],
+}
 
-if "selected_item" not in st.session_state:
-    st.session_state.selected_item = None
+for key, value in defaults.items():
 
-if "search_term" not in st.session_state:
-    st.session_state.search_term = ""
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 
 # ============================================================
 # NAVIGATION
 # ============================================================
 
+VALID_PAGES = {
+    "start",
+    "upload",
+    "search",
+    "profile",
+    "detail",
+}
+
+
 def go_to(page):
 
+    if page not in VALID_PAGES:
+        page = "start"
+
     st.session_state.page = page
+    st.query_params["page"] = page
     st.rerun()
 
 
+page_from_url = st.query_params.get("page")
+
+if page_from_url in VALID_PAGES:
+    st.session_state.page = page_from_url
+
+
 # ============================================================
-# LABEL BEREINIGEN
+# HILFSFUNKTIONEN
 # ============================================================
 
 def clean_label(label):
@@ -305,69 +467,77 @@ def clean_label(label):
 
     label = str(label).strip()
 
-    # Entfernt:
-    # 0 Flasche
-    # 1 Flasche
-    # 2. Tasche
-    # 3) Rucksack
-    # 4 - Kleidung
-
     label = re.sub(
         r"^\s*\d+\s*[\.\)\-:\s]+\s*",
         "",
-        label
+        label,
     )
 
     return label.strip()
 
 
+def safe_text(value):
+
+    if value is None:
+        return ""
+
+    return str(value).strip()
+
+
+def image_exists(path):
+
+    return bool(
+        path
+        and Path(path).exists()
+    )
+
+
 # ============================================================
-# LABELS LADEN
+# LABELS
 # ============================================================
 
 def load_labels():
 
-    default_labels = [
-        "Klasse 1",
-        "Klasse 2",
-        "Klasse 3",
-        "Klasse 4",
-        "Klasse 5",
-    ]
-
     if not LABELS_PATH.exists():
-        return default_labels
 
-    labels = []
+        return [
+            "Flasche",
+            "Tasche",
+            "Rucksack",
+            "Kleidung",
+            "Sonstiges",
+        ]
 
     try:
+
+        labels = []
 
         with open(
             LABELS_PATH,
             "r",
-            encoding="utf-8"
+            encoding="utf-8",
         ) as file:
 
             for line in file:
-
-                line = line.strip()
-
-                if not line:
-                    continue
 
                 line = clean_label(line)
 
                 if line:
                     labels.append(line)
 
+        if labels:
+            return labels
+
     except Exception:
+        pass
 
-        return default_labels
-
-    if not labels:
-        return default_labels
-
-    return labels
+    return [
+        "Flasche",
+        "Tasche",
+        "Rucksack",
+        "Kleidung",
+        "Sonstiges",
+    ]
 
 
 LABELS = load_labels()
@@ -380,10 +550,15 @@ LABELS = load_labels()
 def get_connection():
 
     connection = sqlite3.connect(
-        DATABASE_PATH
+        DATABASE_PATH,
+        timeout=30,
     )
 
     connection.row_factory = sqlite3.Row
+
+    connection.execute(
+        "PRAGMA busy_timeout = 30000"
+    )
 
     return connection
 
@@ -392,31 +567,93 @@ def initialize_database():
 
     connection = get_connection()
 
-    cursor = connection.cursor()
+    try:
 
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS fundstuecke (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            image_path TEXT NOT NULL,
-            name TEXT,
-            kategorie TEXT,
-            farbe TEXT,
-            gefunden_am TEXT,
-            fundort TEXT,
-            notizen TEXT,
-            aktueller_standort TEXT,
-            zugeordnet INTEGER DEFAULT 0,
-            erstellt_am TEXT
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS fundstuecke (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                image_path TEXT,
+                name TEXT,
+                kategorie TEXT,
+                farbe TEXT,
+                gefunden_am TEXT,
+                fundort TEXT,
+                notizen TEXT,
+                aktueller_standort TEXT,
+                zugeordnet INTEGER DEFAULT 0,
+                erstellt_am TEXT
+            )
+            """
         )
-        """
-    )
 
-    connection.commit()
-    connection.close()
+        existing = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(fundstuecke)"
+            ).fetchall()
+        }
+
+        columns = {
+            "image_path": "TEXT",
+            "name": "TEXT",
+            "kategorie": "TEXT",
+            "farbe": "TEXT",
+            "gefunden_am": "TEXT",
+            "fundort": "TEXT",
+            "notizen": "TEXT",
+            "aktueller_standort": "TEXT",
+            "zugeordnet": "INTEGER DEFAULT 0",
+            "erstellt_am": "TEXT",
+        }
+
+        for column, column_type in columns.items():
+
+            if column not in existing:
+
+                connection.execute(
+                    f"""
+                    ALTER TABLE fundstuecke
+                    ADD COLUMN {column} {column_type}
+                    """
+                )
+
+        connection.commit()
+
+    finally:
+
+        connection.close()
 
 
 initialize_database()
+
+
+# ============================================================
+# DATENBANK-RETRY
+# ============================================================
+
+def database_operation(operation):
+
+    last_error = None
+
+    for attempt in range(4):
+
+        try:
+
+            return operation()
+
+        except sqlite3.OperationalError as error:
+
+            last_error = error
+
+            if "locked" not in str(error).lower():
+                raise
+
+            time.sleep(
+                0.4 * (attempt + 1)
+            )
+
+    raise last_error
 
 
 # ============================================================
@@ -431,142 +668,159 @@ def add_item(
     gefunden_am,
     fundort,
     notizen,
-    aktueller_standort
+    aktueller_standort,
 ):
 
-    connection = get_connection()
+    def operation():
 
-    cursor = connection.cursor()
+        connection = get_connection()
 
-    cursor.execute(
-        """
-        INSERT INTO fundstuecke (
-            image_path,
-            name,
-            kategorie,
-            farbe,
-            gefunden_am,
-            fundort,
-            notizen,
-            aktueller_standort,
-            zugeordnet,
-            erstellt_am
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
-        """,
-        (
-            image_path,
-            clean_label(name),
-            clean_label(kategorie),
-            farbe,
-            gefunden_am,
-            fundort,
-            notizen,
-            aktueller_standort,
-            datetime.now().isoformat()
-        )
-    )
+        try:
 
-    connection.commit()
+            cursor = connection.execute(
+                """
+                INSERT INTO fundstuecke (
+                    image_path,
+                    name,
+                    kategorie,
+                    farbe,
+                    gefunden_am,
+                    fundort,
+                    notizen,
+                    aktueller_standort,
+                    zugeordnet,
+                    erstellt_am
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    safe_text(image_path),
+                    safe_text(name),
+                    safe_text(kategorie),
+                    safe_text(farbe),
+                    safe_text(gefunden_am),
+                    safe_text(fundort),
+                    safe_text(notizen),
+                    safe_text(aktueller_standort),
+                    0,
+                    datetime.now().isoformat(),
+                ),
+            )
 
-    item_id = cursor.lastrowid
+            connection.commit()
 
-    connection.close()
+            return cursor.lastrowid
 
-    return item_id
+        except Exception:
+
+            connection.rollback()
+            raise
+
+        finally:
+
+            connection.close()
+
+    return database_operation(operation)
 
 
 # ============================================================
-# ALLE FUNDSTÜCKE
+# FUNDSTÜCKE LADEN
 # ============================================================
 
 def get_all_items():
 
     connection = get_connection()
 
-    cursor = connection.cursor()
+    try:
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM fundstuecke
-        ORDER BY id DESC
-        """
-    )
+        return connection.execute(
+            """
+            SELECT
+                id,
+                image_path,
+                name,
+                kategorie,
+                farbe,
+                gefunden_am,
+                fundort,
+                notizen,
+                aktueller_standort,
+                zugeordnet,
+                erstellt_am
+            FROM fundstuecke
+            ORDER BY id DESC
+            """
+        ).fetchall()
 
-    items = cursor.fetchall()
+    finally:
 
-    connection.close()
+        connection.close()
 
-    return items
-
-
-# ============================================================
-# EIN FUNDSTÜCK
-# ============================================================
 
 def get_item(item_id):
 
     connection = get_connection()
 
-    cursor = connection.cursor()
+    try:
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM fundstuecke
-        WHERE id = ?
-        """,
-        (item_id,)
-    )
+        return connection.execute(
+            """
+            SELECT
+                id,
+                image_path,
+                name,
+                kategorie,
+                farbe,
+                gefunden_am,
+                fundort,
+                notizen,
+                aktueller_standort,
+                zugeordnet,
+                erstellt_am
+            FROM fundstuecke
+            WHERE id = ?
+            """,
+            (item_id,),
+        ).fetchone()
 
-    item = cursor.fetchone()
+    finally:
 
-    connection.close()
-
-    return item
+        connection.close()
 
 
 # ============================================================
-# FUNDSTÜCK ZUORDNEN
+# ZUORDNEN
 # ============================================================
 
 def update_assigned(item_id):
 
-    connection = get_connection()
+    def operation():
 
-    cursor = connection.cursor()
+        connection = get_connection()
 
-    cursor.execute(
-        """
-        UPDATE fundstuecke
-        SET zugeordnet = 1
-        WHERE id = ?
-        """,
-        (item_id,)
-    )
+        try:
 
-    connection.commit()
-    connection.close()
+            connection.execute(
+                """
+                UPDATE fundstuecke
+                SET zugeordnet = 1
+                WHERE id = ?
+                """,
+                (item_id,),
+            )
 
+            connection.commit()
 
-# ============================================================
-# BILD LADEN
-# ============================================================
+        except Exception:
 
-def get_image(path):
+            connection.rollback()
+            raise
 
-    try:
+        finally:
 
-        if path and Path(path).exists():
+            connection.close()
 
-            return Image.open(path)
-
-    except Exception:
-
-        pass
-
-    return None
+    database_operation(operation)
 
 
 # ============================================================
@@ -593,7 +847,7 @@ def save_uploaded_image(uploaded_file):
         image.save(
             path,
             "JPEG",
-            quality=92
+            quality=92,
         )
 
         return str(path)
@@ -608,7 +862,7 @@ def save_uploaded_image(uploaded_file):
 
 
 # ============================================================
-# H5-MODELL REPARIEREN
+# MODELL REPARIEREN
 # ============================================================
 
 def repair_h5_model():
@@ -616,20 +870,12 @@ def repair_h5_model():
     if not MODEL_PATH.exists():
         return None
 
-    if FIXED_MODEL_PATH.exists():
-
-        try:
-
-            if (
-                FIXED_MODEL_PATH.stat().st_mtime
-                >= MODEL_PATH.stat().st_mtime
-            ):
-
-                return FIXED_MODEL_PATH
-
-        except Exception:
-
-            pass
+    if (
+        FIXED_MODEL_PATH.exists()
+        and FIXED_MODEL_PATH.stat().st_mtime
+        >= MODEL_PATH.stat().st_mtime
+    ):
+        return FIXED_MODEL_PATH
 
     try:
 
@@ -637,12 +883,12 @@ def repair_h5_model():
 
         shutil.copy2(
             MODEL_PATH,
-            FIXED_MODEL_PATH
+            FIXED_MODEL_PATH,
         )
 
         with h5py.File(
             FIXED_MODEL_PATH,
-            "r+"
+            "r+",
         ) as file:
 
             if "model_config" not in file.attrs:
@@ -654,9 +900,8 @@ def repair_h5_model():
 
             if isinstance(
                 config,
-                bytes
+                bytes,
             ):
-
                 config = config.decode(
                     "utf-8"
                 )
@@ -665,421 +910,297 @@ def repair_h5_model():
                 config
             )
 
-            def clean_config(obj):
+            def repair(value):
 
-                if isinstance(
-                    obj,
-                    dict
-                ):
+                if isinstance(value, dict):
 
                     if (
-                        obj.get("class_name")
+                        value.get("class_name")
                         == "DepthwiseConv2D"
                     ):
 
-                        obj.get(
+                        value.get(
                             "config",
-                            {}
+                            {},
                         ).pop(
                             "groups",
-                            None
+                            None,
                         )
 
-                    for value in obj.values():
-                        clean_config(value)
+                    for child in value.values():
+                        repair(child)
 
-                elif isinstance(
-                    obj,
-                    list
-                ):
+                elif isinstance(value, list):
 
-                    for value in obj:
-                        clean_config(value)
+                    for child in value:
+                        repair(child)
 
-            clean_config(config)
+            repair(config)
 
             file.attrs[
                 "model_config"
-            ] = json.dumps(config)
+            ] = json.dumps(
+                config
+            ).encode("utf-8")
 
         return FIXED_MODEL_PATH
 
     except Exception:
 
-        return MODEL_PATH
-
-
-# ============================================================
-# KI-MODELL LADEN
-# ============================================================
-
-@st.cache_resource
-def load_ai_model():
-
-    model_file = repair_h5_model()
-
-    if model_file is None:
-
-        st.error(
-            "Die Datei keras_model.h5 wurde nicht gefunden."
-        )
-
         return None
+
+
+# ============================================================
+# MODELL LADEN
+# ============================================================
+
+@st.cache_resource(show_spinner=False)
+def load_model():
+
+    if not MODEL_PATH.exists():
+
+        return (
+            None,
+            "keras_model.h5 wurde nicht gefunden.",
+        )
 
     try:
 
         model = tf.keras.models.load_model(
-            model_file,
-            compile=False
+            MODEL_PATH,
+            compile=False,
         )
 
-        return model
+        return model, None
 
-    except Exception as error:
+    except Exception as first_error:
 
-        st.error(
-            "Das KI-Modell konnte nicht geladen werden."
-        )
+        fixed = repair_h5_model()
 
-        with st.expander(
-            "Technische Fehlermeldung"
-        ):
+        if fixed is None:
 
-            st.code(
-                str(error)
+            return None, str(first_error)
+
+        try:
+
+            model = tf.keras.models.load_model(
+                fixed,
+                compile=False,
             )
 
-        return None
+            return model, None
+
+        except Exception as error:
+
+            return None, str(error)
 
 
 # ============================================================
-# BILD VORBEREITEN
+# MODELL FALLBACK
 # ============================================================
 
-def prepare_image(image):
+def run_layers(model, tensor):
 
-    image = image.convert("RGB")
-
-    image = image.resize(
-        IMAGE_SIZE,
-        Image.Resampling.LANCZOS
-    )
-
-    image_data = (
-        tf.keras.utils.img_to_array(
-            image
-        )
-    )
-
-    image_data = (
-        image_data.astype(
-            "float32"
-        )
-    )
-
-    image_data = (
-        image_data / 127.5
-    ) - 1.0
-
-    return tf.expand_dims(
-        image_data,
-        axis=0
-    )
-
-
-# ============================================================
-# MODEL-LAYER AUSFÜHREN
-# ============================================================
-
-def run_layers(
-    model_part,
-    tensor
-):
-
-    if model_part is None:
-        return tensor
-
-    for layer in getattr(
-        model_part,
-        "layers",
-        []
-    ):
+    for layer in model.layers:
 
         if isinstance(
             layer,
-            tf.keras.layers.InputLayer
+            tf.keras.layers.InputLayer,
         ):
-
             continue
 
         tensor = layer(
             tensor,
-            training=False
+            training=False,
         )
 
     return tensor
 
 
+def manual_prediction(model, tensor):
+
+    nested = []
+
+    for layer in model.layers:
+
+        if (
+            hasattr(layer, "layers")
+            and len(layer.layers) > 0
+        ):
+            nested.append(layer)
+
+    if len(nested) >= 2:
+
+        tensor = run_layers(
+            nested[0],
+            tensor,
+        )
+
+        tensor = run_layers(
+            nested[-1],
+            tensor,
+        )
+
+        return tensor
+
+    return run_layers(
+        model,
+        tensor,
+    )
+
+
 # ============================================================
-# KI-ERKENNUNG
+# KI
 # ============================================================
 
 def predict_image(image):
 
-    model = load_ai_model()
+    model, error = load_model()
 
     if model is None:
-        return None
+
+        raise RuntimeError(
+            f"KI-Modell konnte nicht geladen werden:\n{error}"
+        )
+
+    image = image.convert("RGB")
+    image = image.resize(
+        IMAGE_SIZE
+    )
+
+    tensor = (
+        tf.convert_to_tensor(
+            image,
+            dtype=tf.float32,
+        )
+        / 255.0
+    )
+
+    tensor = tf.expand_dims(
+        tensor,
+        0,
+    )
 
     try:
 
-        tensor = prepare_image(
-            image
+        output = model.predict(
+            tensor,
+            verbose=0,
         )
 
-        outer_layers = list(
-            getattr(
-                model,
-                "layers",
-                []
-            )
+    except Exception:
+
+        output = manual_prediction(
+            model,
+            tensor,
         )
 
-        feature_model = None
-        classifier_model = None
-
-        # ----------------------------------------------------
-        # TEACHABLE-MACHINE-STRUKTUR
-        # ----------------------------------------------------
-
-        for layer in outer_layers:
-
-            name = getattr(
-                layer,
-                "name",
-                ""
-            )
-
-            if name == "sequential_1":
-                feature_model = layer
-
-            elif name == "sequential_3":
-                classifier_model = layer
-
-        # ----------------------------------------------------
-        # ALTERNATIVE STRUKTUR
-        # ----------------------------------------------------
-
-        if (
-            feature_model is None
-            or classifier_model is None
+        if hasattr(
+            output,
+            "numpy",
         ):
+            output = output.numpy()
 
-            nested = []
+    probabilities = (
+        tf.convert_to_tensor(
+            output
+        )
+        .numpy()
+        .reshape(-1)
+    )
 
-            for layer in outer_layers:
-
-                if hasattr(
-                    layer,
-                    "layers"
-                ):
-
-                    inner_layers = getattr(
-                        layer,
-                        "layers",
-                        []
-                    )
-
-                    if len(
-                        inner_layers
-                    ) >= 2:
-
-                        nested.append(
-                            layer
-                        )
-
-            if len(nested) >= 2:
-
-                feature_model = nested[0]
-                classifier_model = nested[-1]
-
-        # ----------------------------------------------------
-        # FEATURE-MODELL
-        # ----------------------------------------------------
-
-        if feature_model is not None:
-
-            tensor = run_layers(
-                feature_model,
-                tensor
-            )
-
-            if classifier_model is not None:
-
-                tensor = run_layers(
-                    classifier_model,
-                    tensor
-                )
-
-        else:
-
-            tensor = run_layers(
-                model,
-                tensor
-            )
-
-        # ----------------------------------------------------
-        # WAHRSCHEINLICHKEITEN
-        # ----------------------------------------------------
+    if (
+        probabilities.min() < 0
+        or probabilities.max() > 1
+        or abs(
+            float(
+                probabilities.sum()
+            ) - 1
+        ) > 0.05
+    ):
 
         probabilities = (
-            tensor.numpy()
-            .reshape(-1)
-        )
-
-        total = float(
-            probabilities.sum()
-        )
-
-        if (
-            total < 0.99
-            or total > 1.01
-            or any(
-                probabilities < 0
-            )
-        ):
-
-            probabilities = (
-                tf.nn.softmax(
-                    probabilities
-                ).numpy()
-            )
-
-        ranking = sorted(
-            enumerate(
+            tf.nn.softmax(
                 probabilities
-            ),
-            key=lambda x: x[1],
-            reverse=True
+            )
+            .numpy()
         )
 
-        results = []
+    ranking = sorted(
+        enumerate(probabilities),
+        key=lambda x: x[1],
+        reverse=True,
+    )
 
-        for index, probability in ranking:
+    results = []
 
-            if index < len(LABELS):
+    for index, probability in ranking:
 
-                label = LABELS[index]
-
-            else:
-
-                label = (
-                    f"Klasse {index + 1}"
-                )
-
-            # Nummer vor dem Begriff entfernen
-            label = clean_label(
-                label
-            )
-
-            results.append(
-                {
-                    "label": label,
-                    "confidence": float(
-                        probability
-                    )
-                }
-            )
-
-        return results
-
-    except Exception as error:
-
-        st.error(
-            "KI-Erkennung fehlgeschlagen."
+        label = (
+            LABELS[index]
+            if index < len(LABELS)
+            else f"Klasse {index + 1}"
         )
 
-        with st.expander(
-            "Technische Fehlermeldung"
-        ):
+        results.append(
+            {
+                "label": clean_label(label),
+                "confidence": float(
+                    probability
+                ),
+            }
+        )
 
-            st.code(
-                str(error)
-            )
-
-        return None
+    return results
 
 
 # ============================================================
 # HEADER
 # ============================================================
 
-def show_header(
-    show_back=False
-):
+def show_header(back=False):
 
     left, center, right = st.columns(
-        [1, 5, 1]
+        [1, 6, 1]
     )
-
-    # --------------------------------------------------------
-    # ZURÜCK
-    # --------------------------------------------------------
 
     with left:
 
-        if show_back:
-
-            if BACK_ICON_PATH.exists():
-
-                st.image(
-                    BACK_ICON_PATH,
-                    width=24
-                )
+        if back:
 
             if st.button(
                 "←",
                 key=f"back_{st.session_state.page}",
-                width="content"
+                width="content",
             ):
-
                 go_to("start")
-
-    # --------------------------------------------------------
-    # FUNDBÜRO LOGO
-    # --------------------------------------------------------
 
     with center:
 
-        if LOGO_PATH.exists():
+        st.markdown(
+            '<div class="app-title">FUNDBÜRO</div>',
+            unsafe_allow_html=True,
+        )
+
+    with right:
+
+        if PROFILE_PATH.exists():
 
             st.image(
-                LOGO_PATH,
-                width=170
+                PROFILE_PATH,
+                width=34,
             )
 
         else:
 
             st.markdown(
-                "## FUNDBÜRO"
+                """
+                <div class="profile-box">
+                    <span>●</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
-
-    # --------------------------------------------------------
-    # PROFIL
-    # --------------------------------------------------------
-
-    with right:
-
-        if PROFILE_ICON_PATH.exists():
-
-            st.image(
-                PROFILE_ICON_PATH,
-                width=28
-            )
-
-        else:
-
-            st.write("●")
 
 
 # ============================================================
@@ -1088,199 +1209,143 @@ def show_header(
 
 def show_footer():
 
-    st.write("")
+    logo = ""
 
-    # ========================================================
-    # FOOTER
-    #
-    #   TU ES | KATHARINEUM ZU LÜBECK | LOGO
-    #
-    # Das Logo rechts sollte nur das schwarze Symbol enthalten.
-    # ========================================================
+    if LOGO_PATH.exists():
 
-    left, middle, right = st.columns(
-        [1.0, 2.8, 1.25],
-        gap="small"
-    )
+        logo = f"""
+        <img
+            class="footer-logo"
+            src="{LOGO_PATH.as_uri()}"
+        >
+        """
 
-    # --------------------------------------------------------
-    # TU ES
-    # --------------------------------------------------------
+    st.markdown(
+        f"""
+        <div class="school-footer">
 
-    with left:
-
-        st.markdown(
-            """
-            <div class="footer-red">
-                TU<br>
-                ES
+            <div class="footer-tu-es">
+                TU ES
             </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-    # --------------------------------------------------------
-    # KATHARINEUM ZU LÜBECK
-    # --------------------------------------------------------
-
-    with middle:
-
-        st.markdown(
-            """
             <div class="footer-school">
                 KATHARINEUM<br>
                 ZU LÜBECK
             </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-    # --------------------------------------------------------
-    # LOGO
-    # --------------------------------------------------------
+            {logo}
 
-    with right:
-
-        if FOOTER_LOGO_PATH.exists():
-
-            st.image(
-                FOOTER_LOGO_PATH,
-                width=55
-            )
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # ============================================================
-# STARTSEITE
+# BOTTOM NAVIGATION
 # ============================================================
 
-def page_start():
+def show_bottom_navigation():
 
-    show_header()
+    st.markdown(
+        """
+        <div class="bottom-nav">
 
-    st.write("")
+            <a href="?page=start">
+                <span class="bottom-icon">⌂</span>
+                START
+            </a>
 
-    # ========================================================
-    # FOTO HOCHLADEN
-    # ========================================================
+            <a href="?page=search">
+                <span class="bottom-icon">⌕</span>
+                SUCHEN
+            </a>
 
-    upload_columns = st.columns(
-        [1, 8],
-        gap="small"
+            <a href="?page=upload">
+                <span class="bottom-icon">＋</span>
+                FUND
+            </a>
+
+            <a href="?page=profile">
+                <span class="bottom-icon">○</span>
+                PROFIL
+            </a>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    with upload_columns[0]:
 
-        if UPLOAD_ICON_PATH.exists():
+# ============================================================
+# BILD-GRID
+# ============================================================
 
-            st.image(
-                UPLOAD_ICON_PATH,
-                width=25
-            )
+def image_grid(
+    items,
+    key_prefix="grid",
+):
 
-    with upload_columns[1]:
-
-        upload_clicked = st.button(
-            "FOTO HOCHLADEN",
-            key="start_upload",
-            width="stretch"
-        )
-
-    if upload_clicked:
-
-        go_to("upload")
-
-    st.write("")
-
-    # ========================================================
-    # KLEIDUNGSSTÜCK SUCHEN
-    # ========================================================
-
-    search_columns = st.columns(
-        [1, 8],
-        gap="small"
-    )
-
-    with search_columns[0]:
-
-        if SEARCH_ICON_PATH.exists():
-
-            st.image(
-                SEARCH_ICON_PATH,
-                width=25
-            )
-
-    with search_columns[1]:
-
-        search_clicked = st.button(
-            "KLEIDUNGSSTÜCK SUCHEN",
-            key="start_search",
-            width="stretch"
-        )
-
-    if search_clicked:
-
-        go_to("search")
-
-    st.write("")
-
-    # ========================================================
-    # LETZTE FUNDSTÜCKE
-    # ========================================================
-
-    st.subheader(
-        "LETZTE FUNDSTÜCKE"
-    )
-
-    items = get_all_items()
-
-    recent_items = items[:6]
-
-    if not recent_items:
+    if not items:
 
         st.info(
             "Noch keine Fundstücke vorhanden."
         )
 
-    else:
+        return
+
+    for start in range(
+        0,
+        len(items),
+        3,
+    ):
+
+        row = items[
+            start:start + 3
+        ]
 
         columns = st.columns(
             3,
-            gap="small"
+            gap="small",
         )
 
-        for index, item in enumerate(
-            recent_items
-        ):
+        for index, item in enumerate(row):
 
-            with columns[
-                index % 3
-            ]:
+            with columns[index]:
 
-                image = get_image(
+                if image_exists(
                     item["image_path"]
-                )
-
-                if image:
+                ):
 
                     st.image(
-                        image,
-                        width="stretch"
+                        item["image_path"],
+                        width="stretch",
                     )
 
-                label = (
-                    item["name"]
-                    or item["kategorie"]
-                    or "Fundstück"
-                )
+                else:
 
-                label = clean_label(
-                    label
-                )
+                    st.markdown(
+                        """
+                        <div style="
+                            height:110px;
+                            border:3px solid #111;
+                            background:#fff;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-weight:900;
+                        ">
+                            KEIN BILD
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
                 if st.button(
-                    label,
-                    key=f"recent_{item['id']}",
-                    width="stretch"
+                    clean_label(
+                        item["name"]
+                    ) or "FUNDSTÜCK",
+                    key=f"{key_prefix}_{item['id']}",
                 ):
 
                     st.session_state.selected_item = (
@@ -1289,295 +1354,430 @@ def page_start():
 
                     go_to("detail")
 
+
+# ============================================================
+# START
+# ============================================================
+
+def page_start():
+
+    show_header()
+
+    st.markdown(
+        """
+        <div class="main-action">
+            <span class="action-icon">⇧</span>
+            FOTO HOCHLADEN
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if st.button(
+        "FOTO HOCHLADEN",
+        key="start_upload",
+    ):
+        go_to("upload")
+
+    st.markdown(
+        """
+        <div style="height:7px"></div>
+
+        <div class="main-action">
+            <span class="action-icon">⌕</span>
+            KLEIDUNGSSTÜCK SUCHEN
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if st.button(
+        "KLEIDUNGSSTÜCK SUCHEN",
+        key="start_search",
+    ):
+        go_to("search")
+
+    st.markdown(
+        "### LETZTE FUNDSTÜCKE"
+    )
+
+    items = get_all_items()
+
+    image_grid(
+        items[:6],
+        "start",
+    )
+
     show_footer()
+    show_bottom_navigation()
 
 
 # ============================================================
-# UPLOAD-SEITE
+# UPLOAD
 # ============================================================
 
 def page_upload():
 
-    show_header(
-        show_back=True
-    )
+    show_header(back=True)
 
-    st.subheader(
-        "FUNDSTÜCK AUFNEHMEN"
-    )
-
-    # ========================================================
-    # KAMERA
-    # ========================================================
-
-    camera_image = st.camera_input(
-        "Foto aufnehmen"
+    st.markdown(
+        "### FUNDSTÜCK HOCHLADEN"
     )
 
     # ========================================================
-    # DATEI
+    # WICHTIG:
+    # HIER GIBT ES KEINE KAMERA UND KEIN VIDEO.
+    # AUSSCHLIESSLICH BILDDATEIEN.
     # ========================================================
 
     uploaded_file = st.file_uploader(
-        "Oder Foto auswählen",
+        "Foto auswählen",
         type=[
             "jpg",
             "jpeg",
             "png",
-            "webp"
-        ]
+        ],
+        accept_multiple_files=False,
+        key="photo_upload",
     )
 
-    if camera_image is not None:
+    if uploaded_file is None:
 
-        selected_image = camera_image
+        st.markdown(
+            """
+            <div style="
+                text-align:center;
+                font-size:13px;
+                font-weight:700;
+                margin:12px 0 20px;
+            ">
+                Bitte ein Foto des Fundstücks auswählen.
+                <br>
+                JPG, JPEG oder PNG
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    else:
+        show_footer()
+        show_bottom_navigation()
 
-        selected_image = uploaded_file
+        return
 
-    if selected_image is not None:
+    # ========================================================
+    # ZUSÄTZLICHE SICHERHEIT:
+    # KEINE VIDEODATEIEN VERARBEITEN
+    # ========================================================
+
+    allowed_types = {
+        "image/jpeg",
+        "image/png",
+    }
+
+    if (
+        uploaded_file.type
+        and uploaded_file.type
+        not in allowed_types
+    ):
+
+        st.error(
+            "Bitte ausschließlich JPG-, JPEG- oder PNG-Bilder hochladen."
+        )
+
+        show_footer()
+        show_bottom_navigation()
+
+        return
+
+    # ========================================================
+    # BILD ÖFFNEN
+    # ========================================================
+
+    try:
 
         image = Image.open(
-            selected_image
+            uploaded_file
         ).convert("RGB")
 
-        st.image(
-            image,
-            width="stretch"
+    except Exception:
+
+        st.error(
+            "Die Datei ist kein gültiges Bild."
         )
 
-        # ====================================================
-        # KI
-        # ====================================================
+        show_footer()
+        show_bottom_navigation()
 
-        st.subheader(
-            "KI-ERKENNUNG"
-        )
+        return
 
-        with st.spinner(
-            "Fundstück wird erkannt..."
-        ):
+    st.image(
+        image,
+        width="stretch",
+    )
 
-            results = predict_image(
-                image
-            )
+    # ========================================================
+    # BILD-ID
+    # ========================================================
 
-        detected_name = ""
+    image_bytes = uploaded_file.getvalue()
 
-        if results:
+    image_id = hashlib.md5(
+        image_bytes
+    ).hexdigest()
 
-            detected_name = clean_label(
-                results[0]["label"]
-            )
+    # ========================================================
+    # KI
+    # ========================================================
 
-            confidence = (
-                results[0]["confidence"]
-                * 100
-            )
+    if (
+        st.session_state.upload_image_id
+        != image_id
+    ):
 
-            st.write(
-                f"**Erkannt:** {detected_name}"
-            )
+        st.session_state.upload_image_id = image_id
+        st.session_state.ai_result = ""
+        st.session_state.ai_confidence = 0.0
+        st.session_state.ai_results = []
 
-            st.write(
-                f"**Sicherheit:** {confidence:.1f} %"
+        try:
+
+            with st.spinner(
+                "Fundstück wird erkannt ..."
+            ):
+
+                results = predict_image(
+                    image
+                )
+
+            if results:
+
+                st.session_state.ai_results = (
+                    results
+                )
+
+                st.session_state.ai_result = (
+                    results[0]["label"]
+                )
+
+                st.session_state.ai_confidence = (
+                    results[0]["confidence"]
+                )
+
+        except Exception as error:
+
+            st.error(
+                "Die KI-Erkennung konnte nicht durchgeführt werden."
             )
 
             with st.expander(
-                "Weitere Ergebnisse"
+                "Technische Fehlermeldung"
             ):
 
-                for result in results:
+                st.code(
+                    str(error)
+                )
 
-                    result_name = clean_label(
-                        result["label"]
-                    )
+    # ========================================================
+    # KI-ERGEBNIS
+    # ========================================================
 
-                    result_confidence = (
-                        result["confidence"]
-                        * 100
-                    )
+    if st.session_state.ai_result:
 
-                    st.write(
-                        f"{result_name}: "
-                        f"{result_confidence:.1f} %"
-                    )
-
-        # ====================================================
-        # INFORMATIONEN
-        # ====================================================
-
-        st.subheader(
-            "INFORMATIONEN"
+        confidence = round(
+            st.session_state.ai_confidence
+            * 100
         )
+
+        st.markdown(
+            f"""
+            <div class="ai-result">
+
+                <div class="ai-title">
+                    KI-ERKENNUNG
+                </div>
+
+                <div class="ai-name">
+                    Erkannt:
+                    {st.session_state.ai_result}
+                </div>
+
+                <div class="ai-confidence">
+                    Sicherheit: {confidence} %
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # ========================================================
+    # FORMULAR
+    # ========================================================
+
+    st.markdown(
+        "### ANGABEN ZUM FUNDSTÜCK"
+    )
+
+    with st.form(
+        "save_item_form",
+    ):
 
         name = st.text_input(
             "Bezeichnung",
-            value=detected_name
+            value=(
+                st.session_state.ai_result
+                or ""
+            ),
+            placeholder="z. B. Trinkflasche",
         )
 
-        category = st.selectbox(
-            "Kategorie",
-            [
-                "",
-                "Kleidung",
-                "Flasche",
-                "Tasche",
-                "Schulsachen",
-                "Elektronik",
-                "Sonstiges"
-            ]
-        )
-
-        color = st.text_input(
+        farbe = st.text_input(
             "Farbe",
-            placeholder="z. B. schwarz"
+            placeholder="z. B. schwarz",
         )
 
-        found_date = st.date_input(
-            "Gefunden am"
-        )
-
-        location = st.text_input(
+        fundort = st.text_input(
             "Fundort",
-            placeholder="z. B. Obere Turnhalle"
+            placeholder="z. B. Obere Turnhalle",
         )
 
-        notes = st.text_area(
+        notizen = st.text_area(
             "Notizen",
-            placeholder="Weitere Informationen..."
+            placeholder="Weitere Informationen",
         )
 
-        current_location = st.text_input(
-            "Aktueller Standort",
-            value="Fundkiste"
-        )
-
-        st.write("")
-
-        if st.button(
+        submitted = st.form_submit_button(
             "FUNDSTÜCK SPEICHERN",
-            key="save_item",
-            width="stretch"
-        ):
+            width="stretch",
+        )
 
-            image_path = save_uploaded_image(
-                selected_image
+    # ========================================================
+    # SPEICHERN
+    # ========================================================
+
+    if submitted:
+
+        image_path = save_uploaded_image(
+            uploaded_file
+        )
+
+        if image_path is None:
+            return
+
+        try:
+
+            item_id = add_item(
+                image_path=image_path,
+                name=name or "Fundstück",
+                kategorie=(
+                    st.session_state.ai_result
+                    or "Sonstiges"
+                ),
+                farbe=farbe,
+                gefunden_am=(
+                    date.today().strftime(
+                        "%d.%m.%Y"
+                    )
+                ),
+                fundort=fundort,
+                notizen=notizen,
+                aktueller_standort="Fundkiste",
             )
 
-            if image_path:
+            st.session_state.selected_item = (
+                item_id
+            )
 
-                item_id = add_item(
-                    image_path=image_path,
-                    name=name,
-                    kategorie=category,
-                    farbe=color,
-                    gefunden_am=found_date.isoformat(),
-                    fundort=location,
-                    notizen=notes,
-                    aktueller_standort=current_location
+            st.success(
+                "Fundstück wurde gespeichert."
+            )
+
+            time.sleep(0.3)
+
+            go_to("detail")
+
+        except sqlite3.OperationalError as error:
+
+            st.error(
+                "Das Fundstück konnte nicht gespeichert werden."
+            )
+
+            st.code(
+                str(error)
+            )
+
+        except Exception as error:
+
+            st.error(
+                "Beim Speichern ist ein Fehler aufgetreten."
+            )
+
+            with st.expander(
+                "Technische Fehlermeldung"
+            ):
+
+                st.code(
+                    str(error)
                 )
-
-                st.session_state.selected_item = (
-                    item_id
-                )
-
-                go_to("detail")
 
     show_footer()
+    show_bottom_navigation()
 
 
 # ============================================================
-# SUCHSEITE
+# SUCHE
 # ============================================================
 
 def page_search():
 
-    show_header()
+    show_header(back=True)
 
-    # ========================================================
-    # SUCHFELD
-    # ========================================================
+    st.markdown(
+        "### FUNDSTÜCK SUCHEN"
+    )
 
     search_term = st.text_input(
         "Suche",
         value=st.session_state.search_term,
-        placeholder="(z.B.:) Flaschen"
+        placeholder="z. B. Flaschen",
+        key="search_input",
     )
 
     st.session_state.search_term = (
         search_term
     )
 
-    # ========================================================
-    # ÜBERSCHRIFT
-    # ========================================================
-
-    if search_term:
-
-        st.subheader(
-            f'ERGEBNISSE FÜR „{search_term.upper()}“'
-        )
-
-    else:
-
-        st.subheader(
-            "ERGEBNISSE"
-        )
-
-    # ========================================================
-    # ZURÜCK
-    # ========================================================
-
-    if st.button(
-        "←",
-        key="search_back",
-        width="content"
-    ):
-
-        go_to("start")
-
-    # ========================================================
-    # FILTER
-    # ========================================================
-
     with st.expander(
         "FILTER"
     ):
 
         color_filter = st.text_input(
-            "Farbe"
+            "Farbe",
         )
 
         category_filter = st.selectbox(
             "Kategorie",
             [
-                "",
-                "Kleidung",
+                "Alle",
                 "Flasche",
                 "Tasche",
-                "Schulsachen",
-                "Elektronik",
-                "Sonstiges"
-            ]
+                "Rucksack",
+                "Kleidung",
+                "Sonstiges",
+            ],
         )
-
-    # ========================================================
-    # FUNDSTÜCKE FILTERN
-    # ========================================================
 
     items = get_all_items()
 
-    filtered_items = []
+    filtered = []
 
-    search_lower = (
+    search = (
         search_term
         .strip()
         .lower()
     )
 
-    color_lower = (
+    color = (
         color_filter
         .strip()
         .lower()
@@ -1587,117 +1787,75 @@ def page_search():
 
         searchable = " ".join(
             [
-                item["name"] or "",
-                item["kategorie"] or "",
-                item["farbe"] or "",
-                item["fundort"] or "",
-                item["notizen"] or ""
+                safe_text(item["name"]),
+                safe_text(item["kategorie"]),
+                safe_text(item["farbe"]),
+                safe_text(item["fundort"]),
+                safe_text(item["notizen"]),
             ]
         ).lower()
 
-        if search_lower:
+        if search and search not in searchable:
+            continue
 
-            if search_lower not in searchable:
-                continue
-
-        if color_lower:
-
-            item_color = (
-                item["farbe"] or ""
+        if (
+            color
+            and color
+            not in safe_text(
+                item["farbe"]
             ).lower()
+        ):
+            continue
 
-            if color_lower not in item_color:
-                continue
+        if (
+            category_filter != "Alle"
+            and category_filter.lower()
+            not in searchable
+        ):
+            continue
 
-        if category_filter:
+        filtered.append(item)
 
-            if (
-                item["kategorie"]
-                != category_filter
-            ):
+    if search:
 
-                continue
-
-        filtered_items.append(
-            item
-        )
-
-    # ========================================================
-    # ERGEBNISSE
-    # ========================================================
-
-    if not filtered_items:
-
-        st.info(
-            "Keine passenden Fundstücke gefunden."
+        st.markdown(
+            f"### ERGEBNISSE FÜR „{search_term.strip()}“"
         )
 
     else:
 
-        columns = st.columns(
-            3,
-            gap="small"
+        st.markdown(
+            "### ALLE FUNDSTÜCKE"
         )
 
-        for index, item in enumerate(
-            filtered_items
-        ):
-
-            with columns[
-                index % 3
-            ]:
-
-                image = get_image(
-                    item["image_path"]
-                )
-
-                if image:
-
-                    st.image(
-                        image,
-                        width="stretch"
-                    )
-
-                label = (
-                    item["name"]
-                    or item["kategorie"]
-                    or "Fundstück"
-                )
-
-                label = clean_label(
-                    label
-                )
-
-                if st.button(
-                    label,
-                    key=f"result_{item['id']}",
-                    width="stretch"
-                ):
-
-                    st.session_state.selected_item = (
-                        item["id"]
-                    )
-
-                    go_to("detail")
+    image_grid(
+        filtered,
+        "search",
+    )
 
     show_footer()
+    show_bottom_navigation()
 
 
 # ============================================================
-# DETAILSEITE
+# DETAIL
 # ============================================================
 
 def page_detail():
 
-    show_header()
+    show_header(back=True)
 
     item_id = (
         st.session_state.selected_item
     )
 
-    if item_id is None:
+    if not item_id:
 
-        go_to("search")
+        st.warning(
+            "Kein Fundstück ausgewählt."
+        )
+
+        return
 
     item = get_item(
         item_id
@@ -1711,169 +1869,179 @@ def page_detail():
 
         return
 
-    # ========================================================
-    # SUCHFELD
-    # ========================================================
-
-    st.text_input(
-        "Suche",
-        value=st.session_state.search_term,
-        placeholder="(z.B.:) Flaschen",
-        key="detail_search"
+    st.markdown(
+        f"""
+        <h2 style="text-align:center;">
+            {clean_label(item["name"]) or "FUNDBÜRO"}
+        </h2>
+        """,
+        unsafe_allow_html=True,
     )
 
-    # ========================================================
-    # ÜBERSCHRIFT
-    # ========================================================
-
-    if st.session_state.search_term:
-
-        st.subheader(
-            f'ERGEBNISSE FÜR „{st.session_state.search_term.upper()}“'
-        )
-
-    else:
-
-        st.subheader(
-            "FUNDSTÜCK"
-        )
-
-    # ========================================================
-    # ZURÜCK
-    # ========================================================
-
-    if st.button(
-        "←",
-        key="detail_back",
-        width="content"
+    if image_exists(
+        item["image_path"]
     ):
 
-        go_to("search")
-
-    # ========================================================
-    # BILD
-    # ========================================================
-
-    image = get_image(
-        item["image_path"]
-    )
-
-    if image:
-
-        image_columns = st.columns(
-            [1, 2, 1]
+        st.image(
+            item["image_path"],
+            width="stretch",
         )
 
-        with image_columns[1]:
-
-            st.image(
-                image,
-                width="stretch"
-            )
-
-    # ========================================================
-    # NAME
-    # ========================================================
-
-    title = (
-        item["name"]
-        or item["kategorie"]
-        or "Fundstück"
-    )
-
-    title = clean_label(
-        title
-    )
-
-    st.subheader(
-        title.upper()
-    )
-
-    # ========================================================
-    # INFORMATIONEN
-    # ========================================================
-
     st.markdown(
-        "**GEFUNDEN AM:**"
+        f"""
+        <div class="detail-row">
+
+            <div class="detail-label">
+                GEFUNDEN AM
+            </div>
+
+            <div class="detail-value">
+                {safe_text(item["gefunden_am"])}
+            </div>
+
+        </div>
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                FUNDORT
+            </div>
+
+            <div class="detail-value">
+                {safe_text(item["fundort"]) or "-"}
+            </div>
+
+        </div>
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                NOTIZEN
+            </div>
+
+            <div class="detail-value">
+                {safe_text(item["notizen"]) or "-"}
+            </div>
+
+        </div>
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                AKTUELLER STANDORT
+            </div>
+
+            <div class="detail-value">
+                {safe_text(item["aktueller_standort"]) or "Fundkiste"}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-
-    st.write(
-        item["gefunden_am"] or "-"
-    )
-
-    st.divider()
-
-    st.markdown(
-        "**FUNDORT:**"
-    )
-
-    st.write(
-        item["fundort"] or "-"
-    )
-
-    st.divider()
-
-    st.markdown(
-        "**NOTIZEN:**"
-    )
-
-    st.write(
-        item["notizen"] or "-"
-    )
-
-    st.divider()
-
-    st.markdown(
-        "**AKTUELLER STANDORT:**"
-    )
-
-    st.write(
-        item["aktueller_standort"] or "-"
-    )
-
-    if item["farbe"]:
-
-        st.divider()
-
-        st.markdown(
-            "**FARBE:**"
-        )
-
-        st.write(
-            item["farbe"]
-        )
-
-    st.write("")
-
-    # ========================================================
-    # ZUORDNUNG
-    # ========================================================
 
     if item["zugeordnet"]:
 
-        st.success(
-            "FUNDSTÜCK ZUGEORDNET"
+        st.markdown(
+            """
+            <div class="assigned">
+                FUNDSTÜCK ZUGEORDNET
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
     else:
 
         if st.button(
             "FUNDSTÜCK ZUORDNEN",
-            key=f"assign_{item['id']}",
-            width="stretch"
+            key=f"assign_{item_id}",
         ):
 
-            update_assigned(
-                item["id"]
-            )
+            try:
 
-            st.rerun()
+                update_assigned(
+                    item_id
+                )
+
+                st.success(
+                    "Fundstück wurde zugeordnet."
+                )
+
+                st.rerun()
+
+            except Exception as error:
+
+                st.error(
+                    "Zuordnung konnte nicht gespeichert werden."
+                )
+
+                st.code(
+                    str(error)
+                )
 
     show_footer()
+    show_bottom_navigation()
 
 
 # ============================================================
-# APP ROUTER
+# PROFIL
+# ============================================================
+
+def page_profile():
+
+    show_header(back=True)
+
+    st.markdown(
+        "### PROFIL"
+    )
+
+    if PROFILE_PATH.exists():
+
+        st.image(
+            PROFILE_PATH,
+            width=90,
+        )
+
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            margin:14px 0 20px;
+        ">
+            <strong>KATHARINEUM ZU LÜBECK</strong>
+            <br>
+            Fundbüro-App
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    items = get_all_items()
+
+    st.markdown(
+        f"""
+        <div class="detail-row">
+
+            <div class="detail-label">
+                GESPEICHERTE FUNDSTÜCKE
+            </div>
+
+            <div class="detail-value">
+                {len(items)}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    show_footer()
+    show_bottom_navigation()
+
+
+# ============================================================
+# APP STARTEN
 # ============================================================
 
 if st.session_state.page == "start":
@@ -1892,9 +2060,11 @@ elif st.session_state.page == "detail":
 
     page_detail()
 
-else:
+elif st.session_state.page == "profile":
 
-    st.session_state.page = "start"
+    page_profile()
+
+else:
 
     page_start()
     
