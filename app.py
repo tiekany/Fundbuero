@@ -1,5 +1,6 @@
 import os
 import base64
+import logging
 import re
 import json
 import shutil
@@ -48,6 +49,18 @@ ASSETS_DIR.mkdir(exist_ok=True)
 MODEL_DIR.mkdir(exist_ok=True)
 IMAGE_DIR.mkdir(exist_ok=True)
 DATA_DIR.mkdir(exist_ok=True)
+
+# Technische Fehler werden intern protokolliert, aber nicht in der App angezeigt.
+LOG_PATH = DATA_DIR / "fundbuero.log"
+
+logging.basicConfig(
+    filename=str(LOG_PATH),
+    level=logging.ERROR,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    encoding="utf-8"
+)
+
+LOGGER = logging.getLogger("fundbuero")
 
 
 # ============================================================
@@ -314,6 +327,119 @@ st.markdown(
         .footer-logo-wrap {
             flex-basis: 40px;
         }
+    }
+
+
+    /* ========================================================
+       APP-WEITE ZENTRIERUNG
+       ======================================================== */
+
+    .main .block-container {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
+    }
+
+    .stApp,
+    .stAppViewContainer,
+    .main,
+    .block-container {
+        text-align: center !important;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    p,
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stCaptionContainer"],
+    [data-testid="stAlert"] {
+        text-align: center !important;
+    }
+
+    /* Widget-Beschriftungen mittig */
+    [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] > div,
+    .stTextInput label,
+    .stTextArea label,
+    .stSelectbox label,
+    .stDateInput label,
+    .stFileUploader label {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    /* Eingaben und Auswahlfelder */
+    .stTextInput input,
+    .stTextArea textarea,
+    .stDateInput input {
+        text-align: center !important;
+    }
+
+    .stTextInput,
+    .stTextArea,
+    .stSelectbox,
+    .stDateInput,
+    .stFileUploader {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    /* Buttons mittig */
+    .stButton {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    .stButton > button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    /* Bilder mittig */
+    [data-testid="stImage"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100%;
+    }
+
+    [data-testid="stImage"] img {
+        display: block !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    /* Datei-Upload-Zone mittig */
+    [data-testid="stFileUploader"] section {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    [data-testid="stFileUploader"] section > div {
+        text-align: center !important;
+    }
+
+    /* Ausklappbereiche und Hinweise mittig */
+    [data-testid="stExpander"] summary {
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    [data-testid="stAlert"] {
+        justify-content: center !important;
+    }
+
+    [data-testid="stRadio"] > div,
+    [data-testid="stCheckbox"] label {
+        justify-content: center !important;
     }
 
     </style>
@@ -650,12 +776,9 @@ def save_uploaded_image(uploaded_file):
 
         return str(path)
 
-    except Exception as error:
+    except Exception:
 
-        st.error(
-            f"Bild konnte nicht gespeichert werden: {error}"
-        )
-
+        LOGGER.exception("Bild konnte nicht gespeichert werden.")
         return None
 
 
@@ -772,10 +895,7 @@ def load_ai_model():
 
     if model_file is None:
 
-        st.error(
-            "Die Datei keras_model.h5 wurde nicht gefunden."
-        )
-
+        LOGGER.error("KI-Modell-Datei wurde nicht gefunden.")
         return None
 
     try:
@@ -787,20 +907,9 @@ def load_ai_model():
 
         return model
 
-    except Exception as error:
+    except Exception:
 
-        st.error(
-            "Das KI-Modell konnte nicht geladen werden."
-        )
-
-        with st.expander(
-            "Technische Fehlermeldung"
-        ):
-
-            st.code(
-                str(error)
-            )
-
+        LOGGER.exception("KI-Modell konnte nicht geladen werden.")
         return None
 
 
@@ -1045,20 +1154,9 @@ def predict_image(image):
 
         return results
 
-    except Exception as error:
+    except Exception:
 
-        st.error(
-            "KI-Erkennung fehlgeschlagen."
-        )
-
-        with st.expander(
-            "Technische Fehlermeldung"
-        ):
-
-            st.code(
-                str(error)
-            )
-
+        LOGGER.exception("KI-Bilderkennung ist fehlgeschlagen.")
         return None
 
 
@@ -1142,41 +1240,45 @@ def show_footer():
 
     st.write("")
 
-    # ========================================================
-    # FOOTER – alle Elemente in einer zentrierten Zeile
-    # ========================================================
+    # HTML ohne eingerückte Markdown-Codeblock-Zeilen erzeugen.
+    # So wird insbesondere das schließende </div> nicht als Text angezeigt.
 
     if FOOTER_LOGO_PATH.exists():
 
-        logo_base64 = base64.b64encode(
-            FOOTER_LOGO_PATH.read_bytes()
-        ).decode("utf-8")
+        try:
 
-        logo_element = f'''            <div class="footer-logo-wrap">
-                <img
-                    class="footer-logo"
-                    src="data:image/png;base64,{logo_base64}"
-                    alt="Katharineum zu Lübeck"
-                >
-            </div>
-        '''
+            logo_base64 = base64.b64encode(
+                FOOTER_LOGO_PATH.read_bytes()
+            ).decode("utf-8")
+
+            logo_html = (
+                f'<img class="footer-logo" '
+                f'src="data:image/png;base64,{logo_base64}" '
+                f'alt="Katharineum zu Lübeck">'
+            )
+
+        except Exception:
+
+            LOGGER.exception("Footer-Logo konnte nicht geladen werden.")
+            logo_html = ""
 
     else:
 
-        logo_element = '<div class="footer-logo-wrap"></div>'
+        logo_html = ""
+        LOGGER.warning("Footer-Logo fehlt: %s", FOOTER_LOGO_PATH)
+
+    footer_html = (
+        '<div class="footer-area">'
+        '<div class="footer-row">'
+        '<div class="footer-tu">TU<br>ES</div>'
+        '<div class="footer-school">KATHARINEUM<br>ZU LÜBECK</div>'
+        f'<div class="footer-logo-wrap">{logo_html}</div>'
+        '</div>'
+        '</div>'
+    )
 
     st.markdown(
-        f'''        <div class="footer-area">
-            <div class="footer-row">
-                <div class="footer-tu">TU<br>ES</div>
-                <div class="footer-school">
-                    KATHARINEUM<br>
-                    ZU LÜBECK
-                </div>
-                {logo_element}
-            </div>
-        </div>
-        ''',
+        footer_html,
         unsafe_allow_html=True
     )
 
@@ -1723,10 +1825,12 @@ def page_detail():
 
     if item is None:
 
-        st.error(
-            "Fundstück wurde nicht gefunden."
+        LOGGER.warning(
+            "Angefordertes Fundstück wurde nicht gefunden: %s",
+            item_id
         )
 
+        go_to("search")
         return
 
     # ========================================================
@@ -1894,24 +1998,34 @@ def page_detail():
 # APP ROUTER
 # ============================================================
 
-if st.session_state.page == "start":
+try:
 
-    page_start()
+    if st.session_state.page == "start":
 
-elif st.session_state.page == "upload":
+        page_start()
 
-    page_upload()
+    elif st.session_state.page == "upload":
 
-elif st.session_state.page == "search":
+        page_upload()
 
-    page_search()
+    elif st.session_state.page == "search":
 
-elif st.session_state.page == "detail":
+        page_search()
 
-    page_detail()
+    elif st.session_state.page == "detail":
 
-else:
+        page_detail()
 
-    st.session_state.page = "start"
+    else:
 
-    page_start()
+        st.session_state.page = "start"
+        page_start()
+
+except Exception:
+
+    # Technische Details stehen nur im internen Log:
+    # daten/fundbuero.log
+
+    LOGGER.exception(
+        "Unerwarteter Fehler beim Anzeigen einer App-Seite."
+    )
