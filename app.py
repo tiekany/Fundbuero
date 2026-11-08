@@ -50,7 +50,11 @@ MODEL_DIR.mkdir(exist_ok=True)
 IMAGE_DIR.mkdir(exist_ok=True)
 DATA_DIR.mkdir(exist_ok=True)
 
-# Technische Fehler werden intern protokolliert, aber nicht in der App angezeigt.
+
+# ============================================================
+# FEHLERPROTOKOLL
+# ============================================================
+
 LOG_PATH = DATA_DIR / "fundbuero.log"
 
 logging.basicConfig(
@@ -234,7 +238,6 @@ st.markdown(
         margin-bottom: 2px;
     }
 
-    /* Alle Footer-Elemente stehen horizontal in einer zentrierten Zeile. */
     .footer-row {
         width: 100%;
         display: flex;
@@ -356,6 +359,7 @@ st.markdown(
     }
 
     /* Widget-Beschriftungen mittig */
+
     [data-testid="stWidgetLabel"],
     [data-testid="stWidgetLabel"] > div,
     .stTextInput label,
@@ -369,6 +373,7 @@ st.markdown(
     }
 
     /* Eingaben und Auswahlfelder */
+
     .stTextInput input,
     .stTextArea textarea,
     .stDateInput input {
@@ -385,6 +390,7 @@ st.markdown(
     }
 
     /* Buttons mittig */
+
     .stButton {
         display: flex !important;
         justify-content: center !important;
@@ -401,6 +407,7 @@ st.markdown(
     }
 
     /* Bilder mittig */
+
     [data-testid="stImage"] {
         display: flex !important;
         justify-content: center !important;
@@ -415,6 +422,7 @@ st.markdown(
     }
 
     /* Datei-Upload-Zone mittig */
+
     [data-testid="stFileUploader"] section {
         display: flex !important;
         flex-direction: column !important;
@@ -428,6 +436,7 @@ st.markdown(
     }
 
     /* Ausklappbereiche und Hinweise mittig */
+
     [data-testid="stExpander"] summary {
         justify-content: center !important;
         text-align: center !important;
@@ -483,13 +492,6 @@ def clean_label(label):
 
     label = str(label).strip()
 
-    # Entfernt:
-    # 0 Flasche
-    # 1 Flasche
-    # 2. Tasche
-    # 3) Rucksack
-    # 4 - Kleidung
-
     label = re.sub(
         r"^\s*\d+\s*[\.\)\-:\s]+\s*",
         "",
@@ -540,6 +542,7 @@ def load_labels():
 
     except Exception:
 
+        LOGGER.exception("Labels konnten nicht geladen werden.")
         return default_labels
 
     if not labels:
@@ -742,7 +745,7 @@ def get_image(path):
 
     except Exception:
 
-        pass
+        LOGGER.exception("Bild konnte nicht geladen werden.")
 
     return None
 
@@ -804,7 +807,7 @@ def repair_h5_model():
 
         except Exception:
 
-            pass
+            LOGGER.exception("Modellzeitstempel konnte nicht geprüft werden.")
 
     try:
 
@@ -881,6 +884,7 @@ def repair_h5_model():
 
     except Exception:
 
+        LOGGER.exception("H5-Modell konnte nicht repariert werden.")
         return MODEL_PATH
 
 
@@ -1138,7 +1142,6 @@ def predict_image(image):
                     f"Klasse {index + 1}"
                 )
 
-            # Nummer vor dem Begriff entfernen
             label = clean_label(
                 label
             )
@@ -1168,24 +1171,17 @@ def show_header(
     show_back=False
 ):
 
+    # Drei Spalten halten das Fundbüro-Logo exakt mittig.
+    # Die rechte Spalte bleibt absichtlich leer.
+    # Das fehlerhafte Profilbild wird nicht mehr angezeigt.
+
     left, center, right = st.columns(
         [1, 5, 1]
     )
 
-    # --------------------------------------------------------
-    # ZURÜCK
-    # --------------------------------------------------------
-
     with left:
 
         if show_back:
-
-            if BACK_ICON_PATH.exists():
-
-                st.image(
-                    BACK_ICON_PATH,
-                    width=24
-                )
 
             if st.button(
                 "←",
@@ -1194,10 +1190,6 @@ def show_header(
             ):
 
                 go_to("start")
-
-    # --------------------------------------------------------
-    # FUNDBÜRO LOGO
-    # --------------------------------------------------------
 
     with center:
 
@@ -1214,22 +1206,10 @@ def show_header(
                 "## FUNDBÜRO"
             )
 
-    # --------------------------------------------------------
-    # PROFIL
-    # --------------------------------------------------------
-
+    # Rechte Spalte bewusst leer lassen.
     with right:
 
-        if PROFILE_ICON_PATH.exists():
-
-            st.image(
-                PROFILE_ICON_PATH,
-                width=28
-            )
-
-        else:
-
-            st.write("●")
+        st.empty()
 
 
 # ============================================================
@@ -1297,27 +1277,15 @@ def page_start():
     # FOTO HOCHLADEN
     # ========================================================
 
-    upload_columns = st.columns(
-        [1, 8],
-        gap="small"
+    # Kein leerer Icon-Bereich mehr links neben dem Button.
+    # Dadurch beginnt der Button weiter links und nutzt
+    # die verfügbare Breite gleichmäßig.
+
+    upload_clicked = st.button(
+        "FOTO HOCHLADEN",
+        key="start_upload",
+        width="stretch"
     )
-
-    with upload_columns[0]:
-
-        if UPLOAD_ICON_PATH.exists():
-
-            st.image(
-                UPLOAD_ICON_PATH,
-                width=25
-            )
-
-    with upload_columns[1]:
-
-        upload_clicked = st.button(
-            "FOTO HOCHLADEN",
-            key="start_upload",
-            width="stretch"
-        )
 
     if upload_clicked:
 
@@ -1329,27 +1297,11 @@ def page_start():
     # KLEIDUNGSSTÜCK SUCHEN
     # ========================================================
 
-    search_columns = st.columns(
-        [1, 8],
-        gap="small"
+    search_clicked = st.button(
+        "KLEIDUNGSSTÜCK SUCHEN",
+        key="start_search",
+        width="stretch"
     )
-
-    with search_columns[0]:
-
-        if SEARCH_ICON_PATH.exists():
-
-            st.image(
-                SEARCH_ICON_PATH,
-                width=25
-            )
-
-    with search_columns[1]:
-
-        search_clicked = st.button(
-            "KLEIDUNGSSTÜCK SUCHEN",
-            key="start_search",
-            width="stretch"
-        )
 
     if search_clicked:
 
