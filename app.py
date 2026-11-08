@@ -114,10 +114,15 @@ st.markdown(
 
     .main .block-container {
         max-width: 450px;
-        padding-top: 8px;
+        padding-top: 12px;
         padding-left: 10px;
         padding-right: 10px;
-        padding-bottom: 5px;
+        padding-bottom: 8px;
+
+        margin-left: auto !important;
+        margin-right: auto !important;
+
+        text-align: center !important;
     }
 
 
@@ -145,12 +150,13 @@ st.markdown(
     h3 {
         color: #111111 !important;
         font-weight: 900 !important;
+        text-align: center !important;
     }
 
     h3 {
         font-size: 19px !important;
-        margin-top: 8px !important;
-        margin-bottom: 9px !important;
+        margin-top: 12px !important;
+        margin-bottom: 13px !important;
     }
 
 
@@ -158,9 +164,24 @@ st.markdown(
        BUTTONS
        ======================================================== */
 
+    .stButton {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+    }
+
     .stButton > button {
         width: 100% !important;
-        min-height: 52px !important;
+        min-height: 54px !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        margin-left: auto !important;
+        margin-right: auto !important;
 
         border: 3px solid #111111 !important;
         border-radius: 2px !important;
@@ -170,6 +191,7 @@ st.markdown(
 
         font-size: 14px !important;
         font-weight: 900 !important;
+        text-align: center !important;
 
         box-shadow: none !important;
     }
@@ -200,11 +222,14 @@ st.markdown(
 
         font-size: 15px !important;
         font-weight: 700 !important;
+
+        text-align: center !important;
     }
 
     .stTextInput label {
         color: #111111 !important;
         font-weight: 800 !important;
+        text-align: center !important;
     }
 
 
@@ -216,6 +241,7 @@ st.markdown(
         border: 3px solid #111111 !important;
         border-radius: 2px !important;
         color: #111111 !important;
+        text-align: center !important;
     }
 
 
@@ -223,8 +249,95 @@ st.markdown(
        BILDER
        ======================================================== */
 
+    [data-testid="stImage"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100%;
+    }
+
     [data-testid="stImage"] img {
+        display: block !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
         border-radius: 0 !important;
+    }
+
+
+    /* ========================================================
+       ALLGEMEINE ZENTRIERUNG
+       ======================================================== */
+
+    .stApp,
+    .stAppViewContainer,
+    .main,
+    .block-container {
+        text-align: center !important;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    p,
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stCaptionContainer"],
+    [data-testid="stAlert"] {
+        text-align: center !important;
+    }
+
+    /* Widget-Beschriftungen */
+
+    [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] > div,
+    .stTextInput label,
+    .stTextArea label,
+    .stSelectbox label,
+    .stDateInput label,
+    .stFileUploader label {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    /* Auswahlfelder und Eingabefelder */
+
+    .stTextInput,
+    .stTextArea,
+    .stSelectbox,
+    .stDateInput,
+    .stFileUploader {
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    /* Datei-Upload-Zone */
+
+    [data-testid="stFileUploader"] section {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    [data-testid="stFileUploader"] section > div {
+        text-align: center !important;
+    }
+
+    /* Ausklappbereiche */
+
+    [data-testid="stExpander"] summary {
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    /* Hinweise */
+
+    [data-testid="stAlert"] {
+        justify-content: center !important;
+    }
+
+    [data-testid="stRadio"] > div,
+    [data-testid="stCheckbox"] label {
+        justify-content: center !important;
     }
 
 
@@ -234,27 +347,33 @@ st.markdown(
 
     .footer-area {
         width: 100%;
-        margin-top: 8px;
-        margin-bottom: 2px;
+        margin-top: 16px;
+        margin-bottom: 5px;
     }
 
     .footer-row {
         width: 100%;
+
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
+
         align-items: center;
         justify-content: center;
-        gap: 22px;
-        margin: 8px auto 2px auto;
+
+        gap: 24px;
+
+        margin: 10px auto 3px auto;
         box-sizing: border-box;
     }
 
     .footer-tu {
         flex: 0 0 auto;
+
         color: #d00000;
         font-size: 18px;
         font-weight: 900;
+
         line-height: 0.88;
         text-align: center;
         white-space: nowrap;
@@ -262,9 +381,11 @@ st.markdown(
 
     .footer-school {
         flex: 0 0 auto;
+
         color: #111111;
         font-size: 9px;
         font-weight: 900;
+
         line-height: 1.05;
         text-align: center;
         white-space: nowrap;
@@ -272,8 +393,10 @@ st.markdown(
 
     .footer-logo-wrap {
         flex: 0 0 48px;
+
         width: 48px;
         height: 48px;
+
         display: flex;
         align-items: center;
         justify-content: center;
@@ -281,9 +404,38 @@ st.markdown(
 
     .footer-logo {
         display: block;
+
         width: 48px;
         height: 48px;
+
         object-fit: contain;
+    }
+
+
+    /* ========================================================
+       ABSTÄNDE ZWISCHEN DEN ELEMENTEN
+       ======================================================== */
+
+    .main .block-container [data-testid="stVerticalBlock"] {
+        gap: 0.85rem !important;
+    }
+
+    .main .block-container [data-testid="stButton"] {
+        margin-top: 0.2rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    .main .block-container [data-testid="stImage"] {
+        margin-top: 0.2rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    .main .block-container [data-testid="stTextInput"],
+    .main .block-container [data-testid="stTextArea"],
+    .main .block-container [data-testid="stSelectbox"],
+    .main .block-container [data-testid="stDateInput"] {
+        margin-top: 0.2rem !important;
+        margin-bottom: 0.2rem !important;
     }
 
 
@@ -299,18 +451,22 @@ st.markdown(
             padding-left: 7px;
             padding-right: 7px;
 
-            padding-top: 5px;
-            padding-bottom: 5px;
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
 
         .stButton > button {
-            min-height: 49px !important;
+            min-height: 52px !important;
             font-size: 13px !important;
         }
 
+        .main .block-container [data-testid="stVerticalBlock"] {
+            gap: 0.75rem !important;
+        }
+
         .footer-row {
-            gap: 12px;
-            margin-top: 7px;
+            gap: 14px;
+            margin-top: 9px;
         }
 
         .footer-tu {
@@ -330,125 +486,6 @@ st.markdown(
         .footer-logo-wrap {
             flex-basis: 40px;
         }
-    }
-
-
-    /* ========================================================
-       APP-WEITE ZENTRIERUNG
-       ======================================================== */
-
-    .main .block-container {
-        margin-left: auto !important;
-        margin-right: auto !important;
-        text-align: center !important;
-    }
-
-    .stApp,
-    .stAppViewContainer,
-    .main,
-    .block-container {
-        text-align: center !important;
-    }
-
-    h1, h2, h3, h4, h5, h6,
-    p,
-    [data-testid="stMarkdownContainer"],
-    [data-testid="stCaptionContainer"],
-    [data-testid="stAlert"] {
-        text-align: center !important;
-    }
-
-    /* Widget-Beschriftungen mittig */
-
-    [data-testid="stWidgetLabel"],
-    [data-testid="stWidgetLabel"] > div,
-    .stTextInput label,
-    .stTextArea label,
-    .stSelectbox label,
-    .stDateInput label,
-    .stFileUploader label {
-        width: 100% !important;
-        justify-content: center !important;
-        text-align: center !important;
-    }
-
-    /* Eingaben und Auswahlfelder */
-
-    .stTextInput input,
-    .stTextArea textarea,
-    .stDateInput input {
-        text-align: center !important;
-    }
-
-    .stTextInput,
-    .stTextArea,
-    .stSelectbox,
-    .stDateInput,
-    .stFileUploader {
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-
-    /* Buttons mittig */
-
-    .stButton {
-        display: flex !important;
-        justify-content: center !important;
-        width: 100% !important;
-    }
-
-    .stButton > button {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-
-    /* Bilder mittig */
-
-    [data-testid="stImage"] {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100%;
-    }
-
-    [data-testid="stImage"] img {
-        display: block !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-
-    /* Datei-Upload-Zone mittig */
-
-    [data-testid="stFileUploader"] section {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-    }
-
-    [data-testid="stFileUploader"] section > div {
-        text-align: center !important;
-    }
-
-    /* Ausklappbereiche und Hinweise mittig */
-
-    [data-testid="stExpander"] summary {
-        justify-content: center !important;
-        text-align: center !important;
-    }
-
-    [data-testid="stAlert"] {
-        justify-content: center !important;
-    }
-
-    [data-testid="stRadio"] > div,
-    [data-testid="stCheckbox"] label {
-        justify-content: center !important;
     }
 
     </style>
@@ -491,6 +528,8 @@ def clean_label(label):
         return ""
 
     label = str(label).strip()
+
+    # Entfernt Nummern am Anfang eines Labels.
 
     label = re.sub(
         r"^\s*\d+\s*[\.\)\-:\s]+\s*",
@@ -1013,9 +1052,7 @@ def predict_image(image):
         feature_model = None
         classifier_model = None
 
-        # ----------------------------------------------------
         # TEACHABLE-MACHINE-STRUKTUR
-        # ----------------------------------------------------
 
         for layer in outer_layers:
 
@@ -1031,9 +1068,7 @@ def predict_image(image):
             elif name == "sequential_3":
                 classifier_model = layer
 
-        # ----------------------------------------------------
         # ALTERNATIVE STRUKTUR
-        # ----------------------------------------------------
 
         if (
             feature_model is None
@@ -1068,9 +1103,7 @@ def predict_image(image):
                 feature_model = nested[0]
                 classifier_model = nested[-1]
 
-        # ----------------------------------------------------
         # FEATURE-MODELL
-        # ----------------------------------------------------
 
         if feature_model is not None:
 
@@ -1093,9 +1126,7 @@ def predict_image(image):
                 tensor
             )
 
-        # ----------------------------------------------------
         # WAHRSCHEINLICHKEITEN
-        # ----------------------------------------------------
 
         probabilities = (
             tensor.numpy()
@@ -1138,20 +1169,14 @@ def predict_image(image):
 
             else:
 
-                label = (
-                    f"Klasse {index + 1}"
-                )
+                label = f"Klasse {index + 1}"
 
-            label = clean_label(
-                label
-            )
+            label = clean_label(label)
 
             results.append(
                 {
                     "label": label,
-                    "confidence": float(
-                        probability
-                    )
+                    "confidence": float(probability)
                 }
             )
 
@@ -1167,12 +1192,10 @@ def predict_image(image):
 # HEADER
 # ============================================================
 
-def show_header(
-    show_back=False
-):
+def show_header(show_back=False):
 
     # Drei Spalten halten das Fundbüro-Logo exakt mittig.
-    # Die rechte Spalte bleibt absichtlich leer.
+    # Die rechte Spalte bleibt leer:
     # Das fehlerhafte Profilbild wird nicht mehr angezeigt.
 
     left, center, right = st.columns(
@@ -1206,9 +1229,7 @@ def show_header(
                 "## FUNDBÜRO"
             )
 
-    # Rechte Spalte bewusst leer lassen.
     with right:
-
         st.empty()
 
 
@@ -1220,8 +1241,8 @@ def show_footer():
 
     st.write("")
 
-    # HTML ohne eingerückte Markdown-Codeblock-Zeilen erzeugen.
-    # So wird insbesondere das schließende </div> nicht als Text angezeigt.
+    # Logo laden und in Base64 umwandeln.
+    # Dadurch wird der HTML-Footer vollständig und korrekt angezeigt.
 
     if FOOTER_LOGO_PATH.exists():
 
@@ -1246,6 +1267,9 @@ def show_footer():
 
         logo_html = ""
         LOGGER.warning("Footer-Logo fehlt: %s", FOOTER_LOGO_PATH)
+
+    # HTML ohne eingerückte Markdown-Codeblock-Zeilen erzeugen.
+    # So wird das schließende </div> nicht als Text angezeigt.
 
     footer_html = (
         '<div class="footer-area">'
@@ -1273,13 +1297,8 @@ def page_start():
 
     st.write("")
 
-    # ========================================================
     # FOTO HOCHLADEN
-    # ========================================================
-
     # Kein leerer Icon-Bereich mehr links neben dem Button.
-    # Dadurch beginnt der Button weiter links und nutzt
-    # die verfügbare Breite gleichmäßig.
 
     upload_clicked = st.button(
         "FOTO HOCHLADEN",
@@ -1288,14 +1307,11 @@ def page_start():
     )
 
     if upload_clicked:
-
         go_to("upload")
 
     st.write("")
 
-    # ========================================================
     # KLEIDUNGSSTÜCK SUCHEN
-    # ========================================================
 
     search_clicked = st.button(
         "KLEIDUNGSSTÜCK SUCHEN",
@@ -1304,14 +1320,11 @@ def page_start():
     )
 
     if search_clicked:
-
         go_to("search")
 
     st.write("")
 
-    # ========================================================
     # LETZTE FUNDSTÜCKE
-    # ========================================================
 
     st.subheader(
         "LETZTE FUNDSTÜCKE"
@@ -1334,13 +1347,9 @@ def page_start():
             gap="small"
         )
 
-        for index, item in enumerate(
-            recent_items
-        ):
+        for index, item in enumerate(recent_items):
 
-            with columns[
-                index % 3
-            ]:
+            with columns[index % 3]:
 
                 image = get_image(
                     item["image_path"]
@@ -1359,9 +1368,7 @@ def page_start():
                     or "Fundstück"
                 )
 
-                label = clean_label(
-                    label
-                )
+                label = clean_label(label)
 
                 if st.button(
                     label,
@@ -1369,10 +1376,7 @@ def page_start():
                     width="stretch"
                 ):
 
-                    st.session_state.selected_item = (
-                        item["id"]
-                    )
-
+                    st.session_state.selected_item = item["id"]
                     go_to("detail")
 
     show_footer()
@@ -1392,10 +1396,8 @@ def page_upload():
         "FUNDSTÜCK AUFNEHMEN"
     )
 
-    # ========================================================
-    # NUR EIN BEREITS VORHANDENES FOTO HOCHLADEN
+    # NUR EIN BEREITS VORHANDENES FOTO HOCHLADEN.
     # Keine Kameraaufnahme und kein Video-Upload.
-    # ========================================================
 
     selected_image = st.file_uploader(
         "Vorhandenes Foto auswählen",
@@ -1410,18 +1412,24 @@ def page_upload():
 
     if selected_image is not None:
 
-        image = Image.open(
-            selected_image
-        ).convert("RGB")
+        try:
 
-        st.image(
-            image,
-            width="stretch"
-        )
+            image = Image.open(
+                selected_image
+            ).convert("RGB")
 
-        # ====================================================
+            st.image(
+                image,
+                width="stretch"
+            )
+
+        except Exception:
+
+            LOGGER.exception("Hochgeladenes Bild konnte nicht geöffnet werden.")
+            show_footer()
+            return
+
         # KI
-        # ====================================================
 
         st.subheader(
             "KI-ERKENNUNG"
@@ -1431,9 +1439,7 @@ def page_upload():
             "Fundstück wird erkannt..."
         ):
 
-            results = predict_image(
-                image
-            )
+            results = predict_image(image)
 
         detected_name = ""
 
@@ -1444,8 +1450,7 @@ def page_upload():
             )
 
             confidence = (
-                results[0]["confidence"]
-                * 100
+                results[0]["confidence"] * 100
             )
 
             st.write(
@@ -1456,9 +1461,7 @@ def page_upload():
                 f"**Sicherheit:** {confidence:.1f} %"
             )
 
-            with st.expander(
-                "Weitere Ergebnisse"
-            ):
+            with st.expander("Weitere Ergebnisse"):
 
                 for result in results:
 
@@ -1467,18 +1470,14 @@ def page_upload():
                     )
 
                     result_confidence = (
-                        result["confidence"]
-                        * 100
+                        result["confidence"] * 100
                     )
 
                     st.write(
-                        f"{result_name}: "
-                        f"{result_confidence:.1f} %"
+                        f"{result_name}: {result_confidence:.1f} %"
                     )
 
-        # ====================================================
         # INFORMATIONEN
-        # ====================================================
 
         st.subheader(
             "INFORMATIONEN"
@@ -1534,28 +1533,30 @@ def page_upload():
             width="stretch"
         ):
 
-            image_path = save_uploaded_image(
-                selected_image
-            )
+            image_path = save_uploaded_image(selected_image)
 
             if image_path:
 
-                item_id = add_item(
-                    image_path=image_path,
-                    name=name,
-                    kategorie=category,
-                    farbe=color,
-                    gefunden_am=found_date.isoformat(),
-                    fundort=location,
-                    notizen=notes,
-                    aktueller_standort=current_location
-                )
+                try:
 
-                st.session_state.selected_item = (
-                    item_id
-                )
+                    item_id = add_item(
+                        image_path=image_path,
+                        name=name,
+                        kategorie=category,
+                        farbe=color,
+                        gefunden_am=found_date.isoformat(),
+                        fundort=location,
+                        notizen=notes,
+                        aktueller_standort=current_location
+                    )
 
-                go_to("detail")
+                    st.session_state.selected_item = item_id
+
+                    go_to("detail")
+
+                except Exception:
+
+                    LOGGER.exception("Fundstück konnte nicht gespeichert werden.")
 
     show_footer()
 
@@ -1568,9 +1569,7 @@ def page_search():
 
     show_header()
 
-    # ========================================================
     # SUCHFELD
-    # ========================================================
 
     search_term = st.text_input(
         "Suche",
@@ -1578,13 +1577,9 @@ def page_search():
         placeholder="(z.B.:) Flaschen"
     )
 
-    st.session_state.search_term = (
-        search_term
-    )
+    st.session_state.search_term = search_term
 
-    # ========================================================
     # ÜBERSCHRIFT
-    # ========================================================
 
     if search_term:
 
@@ -1598,9 +1593,7 @@ def page_search():
             "ERGEBNISSE"
         )
 
-    # ========================================================
     # ZURÜCK
-    # ========================================================
 
     if st.button(
         "←",
@@ -1610,13 +1603,9 @@ def page_search():
 
         go_to("start")
 
-    # ========================================================
     # FILTER
-    # ========================================================
 
-    with st.expander(
-        "FILTER"
-    ):
+    with st.expander("FILTER"):
 
         color_filter = st.text_input(
             "Farbe"
@@ -1635,25 +1624,21 @@ def page_search():
             ]
         )
 
-    # ========================================================
     # FUNDSTÜCKE FILTERN
-    # ========================================================
 
-    items = get_all_items()
+    try:
+
+        items = get_all_items()
+
+    except Exception:
+
+        LOGGER.exception("Fundstücke konnten nicht geladen werden.")
+        items = []
 
     filtered_items = []
 
-    search_lower = (
-        search_term
-        .strip()
-        .lower()
-    )
-
-    color_lower = (
-        color_filter
-        .strip()
-        .lower()
-    )
+    search_lower = search_term.strip().lower()
+    color_lower = color_filter.strip().lower()
 
     for item in items:
 
@@ -1683,20 +1668,12 @@ def page_search():
 
         if category_filter:
 
-            if (
-                item["kategorie"]
-                != category_filter
-            ):
-
+            if item["kategorie"] != category_filter:
                 continue
 
-        filtered_items.append(
-            item
-        )
+        filtered_items.append(item)
 
-    # ========================================================
     # ERGEBNISSE
-    # ========================================================
 
     if not filtered_items:
 
@@ -1711,13 +1688,9 @@ def page_search():
             gap="small"
         )
 
-        for index, item in enumerate(
-            filtered_items
-        ):
+        for index, item in enumerate(filtered_items):
 
-            with columns[
-                index % 3
-            ]:
+            with columns[index % 3]:
 
                 image = get_image(
                     item["image_path"]
@@ -1736,9 +1709,7 @@ def page_search():
                     or "Fundstück"
                 )
 
-                label = clean_label(
-                    label
-                )
+                label = clean_label(label)
 
                 if st.button(
                     label,
@@ -1746,10 +1717,7 @@ def page_search():
                     width="stretch"
                 ):
 
-                    st.session_state.selected_item = (
-                        item["id"]
-                    )
-
+                    st.session_state.selected_item = item["id"]
                     go_to("detail")
 
     show_footer()
@@ -1763,17 +1731,22 @@ def page_detail():
 
     show_header()
 
-    item_id = (
-        st.session_state.selected_item
-    )
+    item_id = st.session_state.selected_item
 
     if item_id is None:
 
         go_to("search")
+        return
 
-    item = get_item(
-        item_id
-    )
+    try:
+
+        item = get_item(item_id)
+
+    except Exception:
+
+        LOGGER.exception("Fundstück konnte nicht geladen werden.")
+        go_to("search")
+        return
 
     if item is None:
 
@@ -1785,9 +1758,7 @@ def page_detail():
         go_to("search")
         return
 
-    # ========================================================
     # SUCHFELD
-    # ========================================================
 
     st.text_input(
         "Suche",
@@ -1796,9 +1767,7 @@ def page_detail():
         key="detail_search"
     )
 
-    # ========================================================
     # ÜBERSCHRIFT
-    # ========================================================
 
     if st.session_state.search_term:
 
@@ -1808,13 +1777,9 @@ def page_detail():
 
     else:
 
-        st.subheader(
-            "FUNDSTÜCK"
-        )
+        st.subheader("FUNDSTÜCK")
 
-    # ========================================================
     # ZURÜCK
-    # ========================================================
 
     if st.button(
         "←",
@@ -1824,19 +1789,13 @@ def page_detail():
 
         go_to("search")
 
-    # ========================================================
     # BILD
-    # ========================================================
 
-    image = get_image(
-        item["image_path"]
-    )
+    image = get_image(item["image_path"])
 
     if image:
 
-        image_columns = st.columns(
-            [1, 2, 1]
-        )
+        image_columns = st.columns([1, 2, 1])
 
         with image_columns[1]:
 
@@ -1845,9 +1804,7 @@ def page_detail():
                 width="stretch"
             )
 
-    # ========================================================
     # NAME
-    # ========================================================
 
     title = (
         item["name"]
@@ -1855,79 +1812,49 @@ def page_detail():
         or "Fundstück"
     )
 
-    title = clean_label(
-        title
-    )
+    title = clean_label(title)
 
-    st.subheader(
-        title.upper()
-    )
+    st.subheader(title.upper())
 
-    # ========================================================
     # INFORMATIONEN
-    # ========================================================
 
-    st.markdown(
-        "**GEFUNDEN AM:**"
-    )
+    st.markdown("**GEFUNDEN AM:**")
 
-    st.write(
-        item["gefunden_am"] or "-"
-    )
+    st.write(item["gefunden_am"] or "-")
 
     st.divider()
 
-    st.markdown(
-        "**FUNDORT:**"
-    )
+    st.markdown("**FUNDORT:**")
 
-    st.write(
-        item["fundort"] or "-"
-    )
+    st.write(item["fundort"] or "-")
 
     st.divider()
 
-    st.markdown(
-        "**NOTIZEN:**"
-    )
+    st.markdown("**NOTIZEN:**")
 
-    st.write(
-        item["notizen"] or "-"
-    )
+    st.write(item["notizen"] or "-")
 
     st.divider()
 
-    st.markdown(
-        "**AKTUELLER STANDORT:**"
-    )
+    st.markdown("**AKTUELLER STANDORT:**")
 
-    st.write(
-        item["aktueller_standort"] or "-"
-    )
+    st.write(item["aktueller_standort"] or "-")
 
     if item["farbe"]:
 
         st.divider()
 
-        st.markdown(
-            "**FARBE:**"
-        )
+        st.markdown("**FARBE:**")
 
-        st.write(
-            item["farbe"]
-        )
+        st.write(item["farbe"])
 
     st.write("")
 
-    # ========================================================
     # ZUORDNUNG
-    # ========================================================
 
     if item["zugeordnet"]:
 
-        st.success(
-            "FUNDSTÜCK ZUGEORDNET"
-        )
+        st.success("FUNDSTÜCK ZUGEORDNET")
 
     else:
 
@@ -1937,11 +1864,14 @@ def page_detail():
             width="stretch"
         ):
 
-            update_assigned(
-                item["id"]
-            )
+            try:
 
-            st.rerun()
+                update_assigned(item["id"])
+                st.rerun()
+
+            except Exception:
+
+                LOGGER.exception("Fundstück konnte nicht zugeordnet werden.")
 
     show_footer()
 
