@@ -1,4 +1,5 @@
 import os
+import base64
 import re
 import json
 import shutil
@@ -62,6 +63,10 @@ FIXED_MODEL_PATH = DATA_DIR / "keras_model_fixed.h5"
 # Logos
 LOGO_PATH = ASSETS_DIR / "fundbuero_logo.png"
 FOOTER_LOGO_PATH = ASSETS_DIR / "footer_logo.png"
+
+# Falls das Logo direkt neben app.py liegt, wird auch dieser Pfad verwendet.
+if not FOOTER_LOGO_PATH.exists():
+    FOOTER_LOGO_PATH = BASE_DIR / "footer_logo.png"
 APP_ICON_PATH = ASSETS_DIR / "app_icon.png"
 
 # Icons
@@ -1090,22 +1095,11 @@ def show_footer():
 
     st.write("")
 
-    # ========================================================
-    # FOOTER
-    #
-    #   TU ES | KATHARINEUM ZU LÜBECK | LOGO
-    #
-    # Das Logo rechts sollte nur das schwarze Symbol enthalten.
-    # ========================================================
-
+    # Footer: TU ES links, Schulname mittig, Katharineum-Symbol rechts.
     left, middle, right = st.columns(
         [1.0, 2.8, 1.25],
         gap="small"
     )
-
-    # --------------------------------------------------------
-    # TU ES
-    # --------------------------------------------------------
 
     with left:
 
@@ -1119,10 +1113,6 @@ def show_footer():
             unsafe_allow_html=True
         )
 
-    # --------------------------------------------------------
-    # KATHARINEUM ZU LÜBECK
-    # --------------------------------------------------------
-
     with middle:
 
         st.markdown(
@@ -1135,17 +1125,44 @@ def show_footer():
             unsafe_allow_html=True
         )
 
-    # --------------------------------------------------------
-    # LOGO
-    # --------------------------------------------------------
-
     with right:
 
         if FOOTER_LOGO_PATH.exists():
 
-            st.image(
-                FOOTER_LOGO_PATH,
-                width=55
+            logo_base64 = base64.b64encode(
+                FOOTER_LOGO_PATH.read_bytes()
+            ).decode("utf-8")
+
+            st.markdown(
+                f"""
+                <div style="
+                    display: flex;
+                    justify-content: flex-end;
+                    align-items: flex-end;
+                    width: 100%;
+                    margin: 0;
+                    padding: 0;
+                ">
+                    <img
+                        src="data:image/png;base64,{logo_base64}"
+                        alt="Katharineum zu Lübeck"
+                        style="
+                            display: block;
+                            width: 54px;
+                            height: 54px;
+                            object-fit: contain;
+                            margin: 0;
+                        "
+                    >
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        else:
+
+            st.caption(
+                "Logo nicht gefunden: footer_logo.png"
             )
 
 
