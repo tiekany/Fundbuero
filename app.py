@@ -67,6 +67,7 @@ FOOTER_LOGO_PATH = ASSETS_DIR / "footer_logo.png"
 # Falls das Logo direkt neben app.py liegt, wird auch dieser Pfad verwendet.
 if not FOOTER_LOGO_PATH.exists():
     FOOTER_LOGO_PATH = BASE_DIR / "footer_logo.png"
+
 APP_ICON_PATH = ASSETS_DIR / "app_icon.png"
 
 # Icons
@@ -215,27 +216,58 @@ st.markdown(
        ======================================================== */
 
     .footer-area {
+        width: 100%;
         margin-top: 8px;
         margin-bottom: 2px;
     }
 
-    .footer-red {
+    /* Alle Footer-Elemente stehen horizontal in einer zentrierten Zeile. */
+    .footer-row {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        margin: 8px auto 2px auto;
+        box-sizing: border-box;
+    }
+
+    .footer-tu {
+        flex: 0 0 auto;
         color: #d00000;
         font-size: 18px;
         font-weight: 900;
-        line-height: 0.82;
+        line-height: 0.88;
         text-align: center;
-        margin-top: 8px;
+        white-space: nowrap;
     }
 
     .footer-school {
+        flex: 0 0 auto;
         color: #111111;
         font-size: 9px;
         font-weight: 900;
-        line-height: 1.0;
+        line-height: 1.05;
         text-align: center;
-        margin-top: 15px;
         white-space: nowrap;
+    }
+
+    .footer-logo-wrap {
+        flex: 0 0 48px;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .footer-logo {
+        display: block;
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
     }
 
 
@@ -260,12 +292,27 @@ st.markdown(
             font-size: 13px !important;
         }
 
-        .footer-red {
-            font-size: 16px;
+        .footer-row {
+            gap: 12px;
+            margin-top: 7px;
+        }
+
+        .footer-tu {
+            font-size: 15px;
         }
 
         .footer-school {
             font-size: 8px;
+        }
+
+        .footer-logo-wrap,
+        .footer-logo {
+            width: 40px;
+            height: 40px;
+        }
+
+        .footer-logo-wrap {
+            flex-basis: 40px;
         }
     }
 
@@ -1095,75 +1142,43 @@ def show_footer():
 
     st.write("")
 
-    # Footer: TU ES links, Schulname mittig, Katharineum-Symbol rechts.
-    left, middle, right = st.columns(
-        [1.0, 2.8, 1.25],
-        gap="small"
-    )
+    # ========================================================
+    # FOOTER – alle Elemente in einer zentrierten Zeile
+    # ========================================================
 
-    with left:
+    if FOOTER_LOGO_PATH.exists():
 
-        st.markdown(
-            """
-            <div class="footer-red">
-                TU<br>
-                ES
+        logo_base64 = base64.b64encode(
+            FOOTER_LOGO_PATH.read_bytes()
+        ).decode("utf-8")
+
+        logo_element = f'''            <div class="footer-logo-wrap">
+                <img
+                    class="footer-logo"
+                    src="data:image/png;base64,{logo_base64}"
+                    alt="Katharineum zu Lübeck"
+                >
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        '''
 
-    with middle:
+    else:
 
-        st.markdown(
-            """
-            <div class="footer-school">
-                KATHARINEUM<br>
-                ZU LÜBECK
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        logo_element = '<div class="footer-logo-wrap"></div>'
 
-    with right:
-
-        if FOOTER_LOGO_PATH.exists():
-
-            logo_base64 = base64.b64encode(
-                FOOTER_LOGO_PATH.read_bytes()
-            ).decode("utf-8")
-
-            st.markdown(
-                f"""
-                <div style="
-                    display: flex;
-                    justify-content: flex-end;
-                    align-items: flex-end;
-                    width: 100%;
-                    margin: 0;
-                    padding: 0;
-                ">
-                    <img
-                        src="data:image/png;base64,{logo_base64}"
-                        alt="Katharineum zu Lübeck"
-                        style="
-                            display: block;
-                            width: 54px;
-                            height: 54px;
-                            object-fit: contain;
-                            margin: 0;
-                        "
-                    >
+    st.markdown(
+        f'''        <div class="footer-area">
+            <div class="footer-row">
+                <div class="footer-tu">TU<br>ES</div>
+                <div class="footer-school">
+                    KATHARINEUM<br>
+                    ZU LÜBECK
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        else:
-
-            st.caption(
-                "Logo nicht gefunden: footer_logo.png"
-            )
+                {logo_element}
+            </div>
+        </div>
+        ''',
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
